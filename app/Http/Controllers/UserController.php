@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use App\Models\Sale;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -79,6 +81,31 @@ class UserController extends Controller
         }
 
         $user->save();
+
+        return back();
+    }
+
+    public function destroy(Request $request, User $user)
+    {
+        if ($user->id === $request->user()->id) {
+            return back()->withErrors(['delete' => 'Akun yang sedang dipakai tidak bisa dihapus.']);
+        }
+
+        if ($user->is_active) {
+            return back()->withErrors(['delete' => 'Nonaktifkan akun ini dulu sebelum menghapus.']);
+        }
+
+        if ($user->sales()->exists() || Sale::where('voided_by', $user->id)->exists()) {
+            return back()->withErrors([
+                'delete' => 'Akun ini punya riwayat transaksi, jadi tidak bisa dihapus. Biarkan nonaktif.',
+            ]);
+        }
+
+        DB::transaction(function () use ($user) {
+            // Hapus sesi login yang tersisa (hanya relevan jika SESSION_DRIVER=database)
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+            $user->delete();
+        });
 
         return back();
     }

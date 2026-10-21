@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
 
@@ -12,6 +12,15 @@ const inputClass =
     'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100';
 
 const card = 'rounded-2xl border border-white/70 bg-white/75 shadow-sm backdrop-blur-md';
+
+function remove(u) {
+    if (confirm(`Hapus akun "${u.username}" (${u.name}) secara permanen? Tindakan ini tidak bisa diurungkan.`)) {
+        router.delete(`/pengguna/${u.id}`, {
+            preserveScroll: true,
+            onError: (e) => alert(e.delete ?? 'Gagal menghapus akun.'),
+        });
+    }
+}
 
 function Field({ label, error, hint, ...props }) {
     return (
@@ -43,6 +52,7 @@ function RoleSelect({ value, onChange, roles, error }) {
 export default function Pengguna({ users, roles }) {
     const [editing, setEditing] = useState(null);
     const [showPw, setShowPw] = useState(false);
+    const { auth } = usePage().props;
 
     const addForm = useForm({ name: '', username: '', role: 'kasir', password: '' });
     const editForm = useForm({ name: '', role: 'kasir', is_active: true, password: '' });
@@ -181,6 +191,23 @@ export default function Pengguna({ users, roles }) {
                                         >
                                             Edit
                                         </button>
+                                        {!u.is_active && u.id !== auth?.user?.id && (
+                                            u.sales_count === 0 ? (
+                                                <button
+                                                    onClick={() => remove(u)}
+                                                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                                                >
+                                                    Hapus
+                                                </button>
+                                            ) : (
+                                                <span
+                                                    title="Punya riwayat transaksi, jadi hanya bisa dinonaktifkan"
+                                                    className="px-3 text-xs text-slate-400"
+                                                >
+                                                    Ada transaksi
+                                                </span>
+                                            )
+                                        )}
                                     </td>
                                 </tr>
                             ))}

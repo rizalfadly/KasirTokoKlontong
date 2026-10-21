@@ -45,6 +45,7 @@ Route::middleware(['auth', CheckRole::class . ':owner'])->group(function () {
     
     Route::get('/pengaturan', [StoreSettingController::class, 'index']);
     Route::put('/pengaturan', [StoreSettingController::class, 'update']);
+    Route::delete('/pengguna/{user}', [UserController::class, 'destroy']);
 });
 
 require __DIR__ . '/auth.php';
