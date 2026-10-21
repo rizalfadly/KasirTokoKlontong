@@ -7,8 +7,22 @@ use App\Models\SaleItem;
 
 class Sale extends Model
 {
+    public const CHANNELS = [
+        'offline'   => 'Offline',
+        'tokopedia' => 'Tokopedia',
+        'shopee'    => 'Shopee',
+    ];
+
+    public const PAYMENTS = [
+        'tunai'       => 'Tunai',
+        'qris'        => 'QRIS',
+        'transfer'    => 'Transfer',
+        'marketplace' => 'Via marketplace',
+    ];
+
     protected $fillable = [
-        'invoice', 'user_id', 'total', 'paid', 'change_amount',
+        'invoice', 'user_id', 'channel', 'payment_method',
+        'total', 'paid', 'change_amount',
         'voided_at', 'voided_by', 'void_reason',
     ];
 
@@ -36,5 +50,11 @@ class Sale extends Model
     public function scopeActive($query)
     {
         return $query->whereNull('voided_at');
+    }
+
+    // Filter per asal penjualan, mis. Sale::active()->channel('shopee')
+    public function scopeChannel($query, string $channel)
+    {
+        return $query->where('channel', $channel);
     }
 }

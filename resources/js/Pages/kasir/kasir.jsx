@@ -9,10 +9,25 @@ const rp = (n) =>
 
 const round3 = (n) => Math.round(n * 1000) / 1000;
 
+// Asal penjualan (channel) dan cara bayar (khusus offline)
+const CHANNELS = [
+    { key: 'offline', label: '🏪 Offline' },
+    { key: 'tokopedia', label: '🟢 Tokopedia' },
+    { key: 'shopee', label: '🟠 Shopee' },
+];
+const METHODS = [
+    { key: 'tunai', label: '💵 Tunai' },
+    { key: 'qris', label: '📱 QRIS' },
+    { key: 'transfer', label: '🏦 Transfer' },
+];
+const PAY_LABEL = { tunai: 'Tunai', qris: 'QRIS', transfer: 'Transfer', marketplace: 'Via marketplace' };
+
 export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
     const [cart, setCart] = useState([]);
     const [search, setSearch] = useState('');
     const [paid, setPaid] = useState('');
+    const [channel, setChannel] = useState('offline');
+    const [method, setMethod] = useState('tunai');
     const [errors, setErrors] = useState({});
     const [processing, setProcessing] = useState(false);
     const [done, setDone] = useState(null);
@@ -22,9 +37,13 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
     const stepOf = (unit) => (isDec(unit) ? 0.5 : 1);
     const lineTotal = (i) => Math.round(i.price * i.qty);
 
+    // Offline: kasir memilih cara bayar. Tokopedia/Shopee: selalu via marketplace.
+    const effectiveMethod = channel === 'offline' ? method : 'marketplace';
+    const needsCash = effectiveMethod === 'tunai';
+
     const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
     const total = useMemo(() => cart.reduce((sum, i) => sum + lineTotal(i), 0), [cart]);
-    const paidNum = Number(paid || 0);
+    const paidNum = needsCash ? Number(paid || 0) : total;
     const change = paidNum - total;
     const canPay = cart.length > 0 && paidNum >= total && !processing;
 
@@ -58,10 +77,23 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
     }
 
     function checkout() {
-        const snapshot = { total, paid: paidNum, change, count: cart.length };
+        const snapshot = {
+            total,
+            paid: paidNum,
+            change,
+            count: cart.length,
+            channel,
+            method: effectiveMethod,
+            needsCash,
+        };
         router.post(
             '/kasir',
-            { items: cart.map((i) => ({ product_id: i.id, qty: i.qty })), paid: paidNum },
+            {
+                items: cart.map((i) => ({ product_id: i.id, qty: i.qty })),
+                channel,
+                payment_method: channel === 'offline' ? method : null,
+                paid: needsCash ? paidNum : null,
+            },
             {
                 preserveScroll: true,
                 onStart: () => setProcessing(true),
@@ -69,6 +101,8 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                 onSuccess: () => {
                     setCart([]);
                     setPaid('');
+                    setChannel('offline');
+                    setMethod('tunai');
                     setErrors({});
                     setDone(snapshot);
                 },
@@ -223,40 +257,96 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                             <span className="text-2xl font-bold">{rp(total)}</span>
                         </div>
 
-                        <input
-                            type="number"
-                            className="w-full rounded-xl border border-slate-200 px-4 py-3 text-lg outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                            placeholder="Uang dibayar"
-                            value={paid}
-                            onChange={(e) => setPaid(e.target.value)}
-                        />
-
-                        {cart.length > 0 && (
+                        {/* Asal penjualan */}
+                        <div>
+                            <div className="mb-1.5 text-xs font-medium text-slate-500">Asal penjualan</div>
                             <div className="flex flex-wrap gap-2">
-                                {quick.map((q) => (
+                                {CHANNELS.map((c) => (
                                     <button
-                                        key={q.label}
-                                        onClick={() => setPaid(String(q.value))}
-                                        className="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-200"
+                                        key={c.key}
+                                        type="button"
+                                        onClick={() => setChannel(c.key)}
+                                        className={
+                                            'rounded-xl px-3 py-2 text-sm font-semibold transition ' +
+                                            (channel === c.key
+                                                ? 'bg-orange-500 text-white shadow'
+                                                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50')
+                                        }
                                     >
-                                        {q.label}
+                                        {c.label}
                                     </button>
                                 ))}
                             </div>
+                        </div>
+
+                        {/* Cara bayar (hanya offline) */}
+                        {channel === 'offline' && (
+                            <div>
+                                <div className="mb-1.5 text-xs font-medium text-slate-500">Cara bayar</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {METHODS.map((m) => (
+                                        <button
+                                            key={m.key}
+                                            type="button"
+                                            onClick={() => setMethod(m.key)}
+                                            className={
+                                                'rounded-lg px-3 py-1.5 text-xs font-semibold transition ' +
+                                                (method === m.key
+                                                    ? 'bg-slate-900 text-white'
+                                                    : 'bg-amber-100 text-amber-800 hover:bg-amber-200')
+                                            }
+                                        >
+                                            {m.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         )}
 
-                        <div
-                            className={
-                                'flex items-center justify-between rounded-xl px-4 py-3 ' +
-                                (paid && change < 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700')
-                            }
-                        >
-                            <span className="text-sm font-medium">{paid && change < 0 ? 'Kurang' : 'Kembalian'}</span>
-                            <span className="text-lg font-bold">{paid ? rp(Math.abs(change)) : '-'}</span>
-                        </div>
+                        {needsCash ? (
+                            <>
+                                <input
+                                    type="number"
+                                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-lg outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                                    placeholder="Uang dibayar"
+                                    value={paid}
+                                    onChange={(e) => setPaid(e.target.value)}
+                                />
+
+                                {cart.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {quick.map((q) => (
+                                            <button
+                                                key={q.label}
+                                                onClick={() => setPaid(String(q.value))}
+                                                className="rounded-lg bg-amber-100 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-200"
+                                            >
+                                                {q.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div
+                                    className={
+                                        'flex items-center justify-between rounded-xl px-4 py-3 ' +
+                                        (paid && change < 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700')
+                                    }
+                                >
+                                    <span className="text-sm font-medium">{paid && change < 0 ? 'Kurang' : 'Kembalian'}</span>
+                                    <span className="text-lg font-bold">{paid ? rp(Math.abs(change)) : '-'}</span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                                Pembayaran <b>{PAY_LABEL[effectiveMethod]}</b> sebesar <b>{rp(total)}</b>. Tidak ada kembalian.
+                            </div>
+                        )}
 
                         {errors.items && <p className="text-sm text-red-600">{errors.items}</p>}
                         {errors.paid && <p className="text-sm text-red-600">{errors.paid}</p>}
+                        {errors.channel && <p className="text-sm text-red-600">{errors.channel}</p>}
+                        {errors.payment_method && <p className="text-sm text-red-600">{errors.payment_method}</p>}
 
                         <button
                             onClick={checkout}
@@ -283,14 +373,24 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                                 <span className="font-semibold">{rp(done.total)}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-slate-500">Dibayar</span>
-                                <span className="font-semibold">{rp(done.paid)}</span>
+                                <span className="text-slate-500">Asal</span>
+                                <span className="font-semibold">
+                                    {CHANNELS.find((c) => c.key === done.channel)?.label.replace(/^\S+\s/, '')}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-500">{done.needsCash ? 'Dibayar' : 'Bayar via'}</span>
+                                <span className="font-semibold">
+                                    {done.needsCash ? rp(done.paid) : PAY_LABEL[done.method]}
+                                </span>
                             </div>
                         </div>
-                        <div className="mt-4 rounded-2xl bg-emerald-50 py-4">
-                            <div className="text-xs text-emerald-700">Kembalian</div>
-                            <div className="text-3xl font-bold text-emerald-700">{rp(done.change)}</div>
-                        </div>
+                        {done.needsCash && (
+                            <div className="mt-4 rounded-2xl bg-emerald-50 py-4">
+                                <div className="text-xs text-emerald-700">Kembalian</div>
+                                <div className="text-3xl font-bold text-emerald-700">{rp(done.change)}</div>
+                            </div>
+                        )}
                         <a
                             href="/riwayat/terakhir"
                             target="_blank"

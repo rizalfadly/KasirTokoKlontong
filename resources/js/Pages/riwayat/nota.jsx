@@ -10,7 +10,9 @@ const PAPERS = {
     80: { label: 'Struk 80 mm', width: '80mm', page: '80mm auto' },
     a4: { label: 'A4', width: '100%', page: 'A4' },
 };
-
+    const CHANNEL_LABEL = { offline: 'Offline', tokopedia: 'Tokopedia', shopee: 'Shopee' };
+    const PAY_LABEL = { tunai: 'Tunai', qris: 'QRIS', transfer: 'Transfer', marketplace: 'Via marketplace' };
+    
 function Row({ l, r, bold }) {
     return (
         <div className={'flex justify-between gap-2 ' + (bold ? 'text-sm font-bold' : '')}>
@@ -151,6 +153,8 @@ export default function Nota({ sale, store }) {
                     <Row l="No" r={sale.invoice} />
                     <Row l="Tanggal" r={fmt(sale.created_at)} />
                     <Row l="Kasir" r={sale.user?.username ?? '-'} />
+                    <Row l="Asal" r={CHANNEL_LABEL[sale.channel] ?? sale.channel ?? '-'} />
+                    <Row l="Bayar via" r={PAY_LABEL[sale.payment_method] ?? sale.payment_method ?? '-'} />
                 </div>
 
                 <Line />
@@ -169,12 +173,18 @@ export default function Nota({ sale, store }) {
 
                 <Line />
 
-                <div className="space-y-0.5">
-                    <Row l="TOTAL" r={rp(sale.total)} bold />
-                    <Row l="Bayar" r={rp(sale.paid)} />
-                    <Row l="Kembali" r={rp(sale.change_amount)} />
-                </div>
-
+                    <div className="space-y-0.5">
+                        <Row l="TOTAL" r={rp(sale.total)} bold />
+                        {sale.payment_method === 'tunai' ? (
+                            <>
+                                <Row l="Bayar" r={rp(sale.paid)} />
+                                <Row l="Kembali" r={rp(sale.change_amount)} />
+                            </>
+                        ) : (
+                            <Row l="Status" r="LUNAS" />
+                        )}
+                    </div>
+                    
                 <Line />
 
                 <div className="whitespace-pre-line text-center">

@@ -26,10 +26,11 @@ class SaleController extends Controller
     {
         $data = $request->validate([
             'items'              => ['required', 'array', 'min:1'],
-            //'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.product_id' => ['required', Rule::exists('products', 'id')->whereNull('deleted_at')],
             'items.*.qty'        => ['required', 'numeric', 'gt:0'],
-            'paid'               => ['required', 'integer', 'min:0'],
+            'channel'            => ['required', Rule::in(array_keys(Sale::CHANNELS))],
+            'payment_method'     => ['nullable', Rule::in(['tunai', 'qris', 'transfer'])],
+            'paid'               => ['nullable', 'integer', 'min:0'],
         ]);
 
         // Gabungkan jika produk yang sama muncul dua kali
@@ -88,18 +89,28 @@ class SaleController extends Controller
                 $product->decrement('stock', $qty);
             }
 
-            if ($data['paid'] < $total) {
+           // Offline: kasir memilih cara bayar. Tokopedia/Shopee: selalu "marketplace".
+            $method = $data['channel'] === 'offline'
+                ? ($data['payment_method'] ?? 'tunai')
+                : 'marketplace';
+
+            // Uang tunai hanya dihitung untuk pembayaran tunai
+            $paid = $method === 'tunai' ? (int) ($data['paid'] ?? 0) : $total;
+
+            if ($paid < $total) {
                 throw ValidationException::withMessages([
                     'paid' => 'Uang yang dibayar kurang dari total.',
                 ]);
             }
 
             $sale = Sale::create([
-                'invoice'       => 'INV-' . now()->format('ymdHis') . random_int(100, 999),
-                'user_id'       => $request->user()->id,
-                'total'         => $total,
-                'paid'          => $data['paid'],
-                'change_amount' => $data['paid'] - $total,
+                'invoice'        => 'INV-' . now()->format('ymdHis') . random_int(100, 999),
+                'user_id'        => $request->user()->id,
+                'channel'        => $data['channel'],
+                'payment_method' => $method,
+                'total'          => $total,
+                'paid'           => $paid,
+                'change_amount'  => $paid - $total,
             ]);
 
             $sale->items()->createMany($rows);
