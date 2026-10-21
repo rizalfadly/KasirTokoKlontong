@@ -31,4 +31,27 @@ return Application::configure(basePath: dirname(__DIR__))
         }
         return $response;
     });
+
+    //  ->withExceptions(function (Exceptions $exceptions) {
+    //     $exceptions->respond(function (Response $response, Throwable $e, Request $request) {
+    //     $status = $response->getStatusCode();
+
+    //     // Saat pengembangan (local), biarkan halaman debug Laravel tampil
+    //     if (app()->environment(['local', 'testing'])) {
+    //         return $response;
+    //     }
+
+    //     if (in_array($status, [404, 500, 503], true)) {
+    //         try {
+    //             return Inertia::render('error/error', ['status' => $status])
+    //                 ->toResponse($request)
+    //                 ->setStatusCode($status);
+    //         } catch (Throwable) {
+    //             // Kalau Inertia sendiri gagal (mis. database mati), pakai halaman HTML cadangan
+    //             return $response;
+    //         }
+    //     }
+
+    //     return $response;
+    //     });
     })->create();
