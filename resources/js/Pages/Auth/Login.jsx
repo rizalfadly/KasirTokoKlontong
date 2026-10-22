@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 const inputCls =
@@ -10,6 +10,24 @@ const FEATURES = [
     { icon: '📈', text: 'Laporan harian, bulanan, dan tahunan' },
 ];
 
+function Brand({ size = 'lg' }) {
+    const { store } = usePage().props;
+    const name = store?.name || 'Brian Berkah Telur';
+    const logo = store?.logo_url || '/images/logotoko.png';
+    const box = size === 'lg' ? 'h-20 w-20' : 'h-14 w-14';
+
+    return (
+        <div className="flex items-center gap-4">
+            <img
+                src={logo}
+                alt={name}
+                className={`${box} shrink-0 rounded-3xl bg-white object-contain p-1 shadow-lg shadow-orange-200`}
+            />
+            <div className={size === 'lg' ? 'text-3xl font-bold' : 'text-xl font-bold'}>{name}</div>
+        </div>
+    );
+}
+
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         username: '',
@@ -20,9 +38,9 @@ export default function Login({ status, canResetPassword }) {
 
     // Pesan bawaan Laravel (bahasa Inggris) diganti ke bahasa Indonesia
     const usernameError =
-    errors.username === 'These credentials do not match our records.'
-        ? 'Username atau kata sandi salah.'
-        : errors.username;
+        errors.username === 'These credentials do not match our records.'
+            ? 'Username atau kata sandi salah.'
+            : errors.username;
 
     function submit(e) {
         e.preventDefault();
@@ -43,17 +61,10 @@ export default function Login({ status, canResetPassword }) {
             <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-4 py-10 lg:grid-cols-2 lg:px-8">
                 {/* Sisi kiri: branding (desktop) */}
                 <div className="hidden lg:block">
-                    <div className="flex items-center gap-4">
-                        <img
-                            src="/images/logotoko.png"
-                            alt="Logo Brian Berkah Telur"
-                            className="h-24 w-24 rounded-3xl object-cover shadow-lg shadow-orange-200"
-                        />
-                        <div className="text-3xl font-bold">Brian Berkah Telur</div>
-                    </div>
+                    <Brand />
 
                     <h1 className="mt-10 text-4xl font-bold leading-tight">
-                        Kelola penjualan telur
+                        Kelola penjualan tokomu
                         <br />
                         jadi lebih <span className="text-orange-500">mudah</span>.
                     </h1>
@@ -77,11 +88,8 @@ export default function Login({ status, canResetPassword }) {
                 {/* Sisi kanan: form */}
                 <div className="mx-auto w-full max-w-md">
                     {/* Logo (HP) */}
-                    <div className="mb-6 flex items-center justify-center gap-3 lg:hidden">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-orange-500 text-2xl shadow-lg shadow-orange-200">
-                            🥚
-                        </div>
-                        <div className="text-xl font-bold">Admin Telur</div>
+                    <div className="mb-6 flex justify-center lg:hidden">
+                        <Brand size="md" />
                     </div>
 
                     <div className="rounded-3xl border border-white/70 bg-white/80 p-8 shadow-xl shadow-orange-100 backdrop-blur-xl">

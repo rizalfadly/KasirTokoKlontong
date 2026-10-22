@@ -52,12 +52,23 @@ export default function ProdukIndex({ products,
     const [search, setSearch] = useState('');
     const [editing, setEditing] = useState(null);
 
+    const addForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
+    const editForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
+
     //const addForm = useForm({ name: '', price: '', stock: '', unit: 'pcs' });
     //const editForm = useForm({ name: '', price: '', stock: '', unit: 'pcs' });
-    const addForm = useForm({ name: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
-    const editForm = useForm({ name: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
+    // const addForm = useForm({ name: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
+    // const editForm = useForm({ name: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
 
-    const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+    //const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+
+    const q = search.trim().toLowerCase();
+        const filtered = products.filter(
+            (p) =>
+                p.name.toLowerCase().includes(q) ||
+                (p.sku ?? '').toLowerCase().includes(q) ||
+                (p.barcode ?? '').toLowerCase().includes(q),
+    );
 
     function submitAdd(e) {
         e.preventDefault();
@@ -73,6 +84,8 @@ export default function ProdukIndex({ products,
                             unit: p.unit ?? 'pcs',
                             icon: p.icon ?? '',
                             image: '',
+                            sku: p.sku ?? '',
+                            barcode: p.barcode ?? '',
                             remove_image: false,
                         });
         setEditing(p);
@@ -113,6 +126,23 @@ export default function ProdukIndex({ products,
                             value={addForm.data.name}
                             onChange={(e) => addForm.setData('name', e.target.value)}
                             error={addForm.errors.name}
+                        />
+                        <Field
+                            label="SKU (kode produk) *"
+                            placeholder="mis. TLR-AYM-001"
+                            hint="Singkat, tanpa spasi. Pola: JENIS-NAMA-UKURAN"
+                            autoCapitalize="characters"
+                            value={addForm.data.sku}
+                            onChange={(e) => addForm.setData('sku', e.target.value)}
+                            error={addForm.errors.sku}
+                        />
+                        <Field
+                            label="Barcode (opsional)"
+                            placeholder="Klik di sini lalu scan barcode kemasan"
+                            value={addForm.data.barcode}
+                            onChange={(e) => addForm.setData('barcode', e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                            error={addForm.errors.barcode}
                         />
                     </div>
                     <Field
@@ -183,9 +213,9 @@ export default function ProdukIndex({ products,
                                 {filtered.map((p) => (
                                     <tr key={p.id} className="transition hover:bg-amber-50/50">
                                         <td className="py-3">
-                                            <div className="flex items-center gap-3">
-                                               <ProductThumb product={p} size="h-10 w-10" text="text-lg" />
-                                                <span className="font-medium">{p.name}</span>
+                                            <div>
+                                                <div className="font-medium">{p.name}</div>
+                                                <div className="font-mono text-xs text-slate-400">{p.sku}</div>
                                             </div>
                                         </td>
                                         <td className="py-3 font-semibold text-orange-600">
@@ -232,6 +262,22 @@ export default function ProdukIndex({ products,
                             onChange={(e) => editForm.setData('name', e.target.value)}
                             error={editForm.errors.name}
                         />
+                        <div className="grid grid-cols-2 gap-4">
+                            <Field
+                                label="SKU"
+                                autoCapitalize="characters"
+                                value={editForm.data.sku}
+                                onChange={(e) => editForm.setData('sku', e.target.value)}
+                                error={editForm.errors.sku}
+                            />
+                            <Field
+                                label="Barcode"
+                                value={editForm.data.barcode}
+                                onChange={(e) => editForm.setData('barcode', e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                                error={editForm.errors.barcode}
+                            />
+                        </div>
                         <div className="grid grid-cols-3 gap-4">
                             <Field
                                 label="Harga (Rp)"

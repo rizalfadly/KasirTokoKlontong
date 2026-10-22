@@ -1,5 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
 import KasirLayout from '../../Layouts/KasirLayout';
+import LogoField from '../../Components/LogoField';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -44,11 +45,15 @@ export default function Pengaturan({ store }) {
         phone: store.phone ?? '',
         slogan: store.slogan ?? '',
         footer: store.footer ?? '',
+        logo: '', remove_logo: false,
     });
 
     function submit(e) {
         e.preventDefault();
-        put('/pengaturan', { preserveScroll: true });
+        put('/pengaturan', {
+            preserveScroll: true,
+            onSuccess: () => setData({ ...data, logo: '', remove_logo: false }),
+        });
     }
 
     const total = SAMPLE.reduce((s, i) => s + i.qty * i.price, 0);
@@ -65,6 +70,7 @@ export default function Pengaturan({ store }) {
             <div className="grid gap-6 lg:grid-cols-2">
                 {/* Form */}
                 <form onSubmit={submit} className={card + ' space-y-4 self-start p-5'}>
+                    <LogoField form={{ data, setData }} existingUrl={store.logo_url} />
                     <Field label="Nama toko" error={errors.name}>
                         <input
                             className={inputClass}

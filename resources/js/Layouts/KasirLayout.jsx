@@ -24,15 +24,24 @@ function Background() {
 }
 
 function Logo({ subtitle }) {
+    const { store } = usePage().props;
+    const name = store?.name || 'Kasir Telur';
+
     return (
         <div className="flex items-center gap-3">
-            <img
-                src="/images/logotoko.png"
-                alt="Logo Brian Berkah Telur"
-                className="h-11 w-11 rounded-2xl object-cover shadow-lg shadow-orange-200"
-            />
-            <div>
-                <div className="text-lg font-bold leading-tight">Brian Berkah Telur</div>
+            {store?.logo_url ? (
+                <img
+                    src={store.logo_url}
+                    alt={name}
+                    className="h-11 w-11 shrink-0 rounded-2xl bg-white object-contain p-1 shadow-lg shadow-orange-100"
+                />
+            ) : (
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-300 to-orange-500 text-2xl shadow-lg shadow-orange-200">
+                    🥚
+                </div>
+            )}
+            <div className="min-w-0">
+                <div className="truncate text-lg font-bold leading-tight">{name}</div>
                 {subtitle && <div className="text-xs text-slate-400">{subtitle}</div>}
             </div>
         </div>

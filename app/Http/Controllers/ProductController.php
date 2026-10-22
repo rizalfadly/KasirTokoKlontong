@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
@@ -24,7 +25,10 @@ class ProductController extends Controller
     {
         $data = $this->validated($request);
 
-        $product = Product::create(Arr::only($data, ['name', 'price', 'stock', 'unit', 'icon']));
+        // SKU dikosongkan -> dibuat otomatis
+        //$data['sku'] = $data['sku'] ?? Product::generateSku();
+
+        $product = Product::create(Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']));
         $this->saveImage($product, $data);
 
         return back();
@@ -32,9 +36,17 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
-        $data = $this->validated($request);
+        $data = $this->validated($request, $product);
 
-        $product->update(Arr::only($data, ['name', 'price', 'stock', 'unit', 'icon']));
+        // $fields = Arr::only($data, ['name', 'barcode', 'price', 'stock', 'unit', 'icon']);
+        $fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']);
+
+        // // SKU dikosongkan saat edit -> SKU lama dipertahankan
+        // if (! empty($data['sku'])) {
+        //     $fields['sku'] = $data['sku'];
+        // }
+
+        $product->update($fields);
         $this->saveImage($product, $data);
 
         return back();
@@ -83,14 +95,28 @@ class ProductController extends Controller
         }
     }
 
-    private function validated(Request $request): array
+    private function validated(Request $request, ?Product $product = null): array
     {
+        // Rapikan masukan: unit huruf kecil, SKU huruf besar, kosong -> null
+        $sku = strtoupper(trim((string) $request->input('sku')));
+        $barcode = trim((string) $request->input('barcode'));
+
         $request->merge([
-            'unit' => strtolower(trim((string) $request->input('unit'))),
+            'unit'    => strtolower(trim((string) $request->input('unit'))),
+            'sku'     => $sku === '' ? null : $sku,
+            'barcode' => $barcode === '' ? null : $barcode,
         ]);
 
         $data = $request->validate([
             'name'         => ['required', 'string', 'max:100'],
+            'sku'          => [
+                'required', 'string', 'max:40', 'regex:/^[A-Za-z0-9._-]+$/',
+                Rule::unique('products', 'sku')->ignore($product?->id),
+            ],
+            'barcode'      => [
+                'nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9._-]+$/',
+                Rule::unique('products', 'barcode')->ignore($product?->id),
+            ],
             'price'        => ['required', 'integer', 'min:0'],
             'stock'        => ['required', 'numeric', 'min:0', 'max:999999'],
             'unit'         => ['required', 'in:' . implode(',', Product::UNITS)],
@@ -112,6 +138,12 @@ class ProductController extends Controller
                     }
                 },
             ],
+        ], [
+            'sku.unique'     => 'SKU ini sudah dipakai produk lain.',
+            'sku.required'   => 'SKU wajib diisi.',
+            'barcode.unique' => 'Barcode ini sudah dipakai produk lain.',
+            'sku.regex'      => 'SKU hanya boleh huruf, angka, titik, garis bawah, dan strip.',
+            'barcode.regex'  => 'Barcode hanya boleh huruf, angka, titik, garis bawah, dan strip.',
         ]);
 
         $stock = round((float) $data['stock'], 3);

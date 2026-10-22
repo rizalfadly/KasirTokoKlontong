@@ -14,7 +14,7 @@ class Product extends Model
     // Satuan yang boleh berpecahan (1,5 kilo). Satuan lain harus bulat.
     public const DECIMAL_UNITS = ['kilo', 'liter'];
 
-    protected $fillable = ['name', 'price', 'stock', 'unit', 'icon'];
+    protected $fillable = ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon'];
 
     protected $casts = [
         'stock' => 'float',
@@ -33,5 +33,18 @@ class Product extends Model
         return $this->image_version
             ? "/produk/{$this->id}/gambar?v={$this->image_version}"
             : null;
+    }
+
+    // SKU otomatis berikutnya: PRD-0001, PRD-0002, ...
+    public static function generateSku(): string
+    {
+        $n = (static::withTrashed()->max('id') ?? 0) + 1;
+
+        do {
+            $sku = 'PRD-' . str_pad((string) $n, 4, '0', STR_PAD_LEFT);
+            $n++;
+        } while (static::withTrashed()->where('sku', $sku)->exists());
+
+        return $sku;
     }
 }

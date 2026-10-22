@@ -14,6 +14,7 @@ Route::redirect('/', '/dashboard');
 // Terbuka untuk semua orang (tamu melihat versi terbatas)
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/produk/{product}/gambar', [ProductController::class, 'image'])->whereNumber('product');
+Route::get('/logo-toko', [StoreSettingController::class, 'logo']);
 
 // Semua yang sudah login: kasir, admin, owner
 Route::middleware('auth')->group(function () {
@@ -34,7 +35,7 @@ Route::middleware(['auth', CheckRole::class . ':owner,admin'])->group(function (
 
     Route::get('/laporan', [ReportController::class, 'index']);
     Route::get('/laporan/export', [ReportController::class, 'export']);
-   // Route::post('/riwayat/{sale}/batal', [SaleController::class, 'void'])->whereNumber('sale');
+  
 });
 
 // Hanya owner

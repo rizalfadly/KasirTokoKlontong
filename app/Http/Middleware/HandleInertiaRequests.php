@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\StoreSetting;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -28,12 +29,18 @@ class HandleInertiaRequests extends Middleware
      * @return array<string, mixed>
      */
     public function share(Request $request): array
-    {
-        return [
-            ...parent::share($request),
-            'auth' => [
-                'user' => $request->user(),
-            ],
-        ];
-    }
+        {
+            return [
+                ...parent::share($request),
+                'auth' => [
+                    'user' => $request->user(),
+                ],
+                'store' => function () {
+                    $s = \App\Models\StoreSetting::current();
+
+                    return ['name' => $s->name, 'logo_url' => $s->logo_url];
+                },
+            ];
+        }
+    
 }

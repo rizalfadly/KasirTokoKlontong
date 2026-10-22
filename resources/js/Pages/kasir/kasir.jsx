@@ -32,6 +32,7 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
     const [processing, setProcessing] = useState(false);
     const [done, setDone] = useState(null);
     const [tick, setTick] = useState(0); // memaksa kolom jumlah menyegarkan tampilannya
+    const [scanMsg, setScanMsg] = useState(null);
 
     const isDec = (unit) => decimalUnits.includes(unit);
     const stepOf = (unit) => (isDec(unit) ? 0.5 : 1);
@@ -41,7 +42,16 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
     const effectiveMethod = channel === 'offline' ? method : 'marketplace';
     const needsCash = effectiveMethod === 'tunai';
 
-    const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+    //const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+
+    const q = search.trim().toLowerCase();
+        const filtered = products.filter(
+            (p) =>
+                p.name.toLowerCase().includes(q) ||
+                (p.sku ?? '').toLowerCase().includes(q) ||
+                (p.barcode ?? '').toLowerCase().includes(q),
+    );
+
     const total = useMemo(() => cart.reduce((sum, i) => sum + lineTotal(i), 0), [cart]);
     const paidNum = needsCash ? Number(paid || 0) : total;
     const change = paidNum - total;
@@ -57,6 +67,30 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
             }
             return [...prev, { ...p, qty: Math.min(1, p.stock) }];
         });
+    }
+
+        // Scanner mengetik kode lalu menekan Enter: produk yang cocok langsung masuk keranjang
+    function handleScan(e) {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+
+            const code = search.trim().toLowerCase();
+            if (!code) return;
+
+            const hit = products.find(
+                (p) => (p.barcode ?? '').toLowerCase() === code || (p.sku ?? '').toLowerCase() === code,
+            );
+
+            if (hit) {
+                add(hit);
+                setScanMsg({ ok: true, text: `Ditambahkan: ${hit.name}` });
+                setSearch('');
+            } else if (filtered.length === 0) {
+                setScanMsg({ ok: false, text: `Kode "${search.trim()}" tidak ditemukan atau stok habis.` });
+                setSearch('');
+            }
+
+            setTimeout(() => setScanMsg(null), 3000);
     }
 
     function setQty(id, value) {
@@ -131,10 +165,22 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                 {/* Daftar produk */}
                 <section className="space-y-4 lg:col-span-2">
                     <div className="relative">
+                        {scanMsg && (
+                            <div
+                                className={
+                                    'mt-2 rounded-xl px-4 py-2 text-sm font-medium ' +
+                                    (scanMsg.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600')
+                                }
+                            >
+                                {scanMsg.text}
+                            </div>
+                        )}
                         <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">🔍</span>
                         <input
                             className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 shadow-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                            placeholder="Cari produk..."
+                            placeholder="Scan barcode atau cari produk..."
+                            onKeyDown={handleScan}
+                            autoFocus
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
