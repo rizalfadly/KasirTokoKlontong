@@ -38,7 +38,7 @@ function Panel({ title, action, children }) {
     );
 }
 
-export default function Dashboard({ stats, chart, topProducts, lowStock, recent, stockList = [] }) {
+export default function Dashboard({ stats, chart, topProducts, lowStock, recent, pendingOpnames = 0, stockList = [] }) {
     const { auth } = usePage().props;
     const isGuest = !auth?.user;
 
@@ -81,6 +81,15 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
                     🛒 Mulai Transaksi
                 </Link> */}
             </div>
+
+                {pendingOpnames > 0 && (
+                    <Link
+                        href="/opname"
+                        className="block rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-sky-700 transition hover:bg-sky-100"
+                    >
+                        📬 <b>{pendingOpnames}</b> opname menunggu persetujuanmu. Klik untuk meninjau →
+                    </Link>
+                )}
 
             {/* Statistik */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

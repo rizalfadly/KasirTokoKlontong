@@ -1,4 +1,5 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import StockModal from '../../Components/StockModal';
 import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num } from '../../lib/format';
@@ -52,15 +53,12 @@ export default function ProdukIndex({ products,
     const [search, setSearch] = useState('');
     const [editing, setEditing] = useState(null);
 
+    const { auth } = usePage().props;
+    const isOwner = auth?.user?.role === 'owner';
+    const [stockFor, setStockFor] = useState(null);
+
     const addForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
     const editForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
-
-    //const addForm = useForm({ name: '', price: '', stock: '', unit: 'pcs' });
-    //const editForm = useForm({ name: '', price: '', stock: '', unit: 'pcs' });
-    // const addForm = useForm({ name: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
-    // const editForm = useForm({ name: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
-
-    //const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
     const q = search.trim().toLowerCase();
         const filtered = products.filter(
@@ -230,6 +228,12 @@ export default function ProdukIndex({ products,
                                         </td>
                                         <td className="py-3 text-right">
                                             <button
+                                                onClick={() => setStockFor(p)}
+                                                className="mr-1 rounded-lg px-3 py-1.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
+                                            >
+                                                Stok
+                                            </button>
+                                            <button
                                                 onClick={() => openEdit(p)}
                                                 className="mr-1 rounded-lg px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50"
                                             >
@@ -288,6 +292,8 @@ export default function ProdukIndex({ products,
                             />
                             <Field
                                 label="Stok"
+                                disabled
+                                hint="Ubah stok lewat tombol Stok di daftar produk."
                                 type="number"
                                 step={decimalUnits.includes(editForm.data.unit) ? '0.001' : '1'}
                                 min="0"
@@ -320,6 +326,17 @@ export default function ProdukIndex({ products,
                     </form>
                 </div>
             )}
+
+            {stockFor && (
+                <StockModal
+                    key={stockFor.id}
+                    product={stockFor}
+                    decimalUnits={decimalUnits}
+                    isOwner={isOwner}
+                    onClose={() => setStockFor(null)}
+                />
+            )}
+
         </div>
     );
 }

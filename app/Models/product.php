@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+
 class Product extends Model
 {
     use SoftDeletes;
@@ -33,6 +34,16 @@ class Product extends Model
         return $this->image_version
             ? "/produk/{$this->id}/gambar?v={$this->image_version}"
             : null;
+    }
+
+    public function movements()
+    {
+        return $this->hasMany(StockMovement::class);
+    }
+
+    public function opnameItems()
+    {
+        return $this->hasMany(StockOpnameItem::class);
     }
 
     // SKU otomatis berikutnya: PRD-0001, PRD-0002, ...

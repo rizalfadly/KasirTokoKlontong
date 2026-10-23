@@ -8,6 +8,8 @@ const menu = [
     { label: 'Laporan', href: '/laporan', icon: '📈', roles: ['owner', 'admin'] },
     { label: 'Pengguna', href: '/pengguna', icon: '👥', roles: ['owner'] },
     { label: 'Toko', href: '/pengaturan', icon: '🏪', roles: ['owner'] },
+    { label: 'Buku Stok', href: '/buku-stok', icon: '📒', roles: ['owner', 'admin'] },
+    { label: 'Opname', href: '/opname', icon: '🧮', roles: ['owner', 'admin'] },
 ];
 
 const shell =
@@ -122,16 +124,13 @@ export default function KasirLayout({ children }) {
                 <main className="pb-24 lg:pb-8">{children}</main>
             </div>
 
-            <nav
-                style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
-                className="fixed inset-x-0 bottom-0 z-20 grid border-t border-white/60 bg-white/80 backdrop-blur-xl print:hidden lg:hidden"
-            >
+            <nav className="fixed inset-x-0 bottom-0 z-20 flex overflow-x-auto border-t border-white/60 bg-white/80 backdrop-blur-xl print:hidden lg:hidden">
                 {items.map((m) => (
                     <Link
                         key={m.href}
                         href={m.href}
                         className={
-                            'flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ' +
+                            'flex min-w-[72px] flex-1 shrink-0 flex-col items-center gap-0.5 py-2 text-[11px] font-medium ' +
                             (active(m.href) ? 'text-orange-600' : 'text-slate-400')
                         }
                     >

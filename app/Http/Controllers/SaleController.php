@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Illuminate\Validation\Rule;
+use App\Services\StockService;
 
 class SaleController extends Controller
 {
@@ -86,7 +87,7 @@ class SaleController extends Controller
                     'subtotal'   => $subtotal,
                 ];
 
-                $product->decrement('stock', $qty);
+                //$product->decrement('stock', $qty);
             }
 
            // Offline: kasir memilih cara bayar. Tokopedia/Shopee: selalu "marketplace".
@@ -114,6 +115,18 @@ class SaleController extends Controller
             ]);
 
             $sale->items()->createMany($rows);
+
+            // Catat pengurangan stok di buku stok
+            foreach ($rows as $row) {
+                StockService::move(
+                    $products[$row['product_id']],
+                    -$row['qty'],
+                    'sale',
+                    $request->user()->id,
+                    null,
+                    $sale->id,
+                );
+            }
         });
 
         return back();
@@ -171,7 +184,16 @@ class SaleController extends Controller
 
             // Kembalikan stok sesuai isi transaksi
             foreach ($sale->items as $item) {
-                Product::withTrashed()->whereKey($item->product_id)->increment('stock', $item->qty);
+                $product = Product::withTrashed()->find($item->product_id);
+
+                StockService::move(
+                    $product,
+                    (float) $item->qty,
+                    'void',
+                    $request->user()->id,
+                    'Pembatalan ' . $sale->invoice,
+                    $sale->id,
+                );
             }
 
             $sale->update([

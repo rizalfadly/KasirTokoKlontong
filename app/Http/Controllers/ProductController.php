@@ -9,6 +9,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Services\StockService;
 
 class ProductController extends Controller
 {
@@ -29,6 +30,7 @@ class ProductController extends Controller
         //$data['sku'] = $data['sku'] ?? Product::generateSku();
 
         $product = Product::create(Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']));
+        StockService::initial($product, $request->user()->id);
         $this->saveImage($product, $data);
 
         return back();
@@ -38,13 +40,8 @@ class ProductController extends Controller
     {
         $data = $this->validated($request, $product);
 
-        // $fields = Arr::only($data, ['name', 'barcode', 'price', 'stock', 'unit', 'icon']);
-        $fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']);
-
-        // // SKU dikosongkan saat edit -> SKU lama dipertahankan
-        // if (! empty($data['sku'])) {
-        //     $fields['sku'] = $data['sku'];
-        // }
+        //$fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']);
+        $fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'unit', 'icon']);
 
         $product->update($fields);
         $this->saveImage($product, $data);
@@ -54,7 +51,7 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        if ($product->saleItems()->exists()) {
+        if ($product->saleItems()->exists() || $product->opnameItems()->exists()) {
             // Sudah pernah terjual: diarsipkan, riwayat tetap utuh
             $product->delete();
         } else {
