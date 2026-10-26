@@ -133,18 +133,43 @@ class SaleController extends Controller
     }
 
     public function index(Request $request)
-    {
-        $query = Sale::with(['user:id,name,username', 'voider:id,name,username'])->withCount('items')->latest()->limit(50);
+            {
+                $user = $request->user();
+                $q = trim((string) $request->query('q', ''));
+                $onlyVoid = $request->boolean('void');
 
-        // Kasir hanya melihat transaksi yang dibuatnya sendiri
-        if ($request->user()->role === 'kasir') {
-            $query->where('user_id', $request->user()->id);
-        }
+                // Aturan akses: kasir hanya melihat transaksinya sendiri
+                $scope = fn () => Sale::query()
+                    ->when($user->role === 'kasir', fn ($s) => $s->where('user_id', $user->id));
 
-        return Inertia::render('riwayat/riwayat', [
-            'sales' => $query->get(),
-        ]);
-    }
+                $sales = $scope()
+                    ->with(['user:id,name,username', 'voider:id,name,username'])
+                    ->withCount('items')
+                    ->when($q !== '', function ($query) use ($q) {
+                        $query->where(function ($w) use ($q) {
+                            $w->where('invoice', 'like', "%{$q}%")
+                            ->orWhereHas('user', fn ($u) => $u->where('username', 'like', "%{$q}%"));
+                        });
+                    })
+                    ->when($onlyVoid, fn ($query) => $query->whereNotNull('voided_at'))
+                    ->latest()
+                    ->paginate(20)
+                    ->withQueryString();
+
+                $activeCount = $scope()->whereNull('voided_at')->count();
+                $activeTotal = (int) $scope()->whereNull('voided_at')->sum('total');
+
+                return Inertia::render('riwayat/riwayat', [
+                    'sales'   => $sales,
+                    'filters' => ['q' => $q, 'void' => $onlyVoid],
+                    'summary' => [
+                        'count'     => $activeCount,
+                        'total'     => $activeTotal,
+                        'average'   => $activeCount ? (int) round($activeTotal / $activeCount) : 0,
+                        'voidCount' => $scope()->whereNotNull('voided_at')->count(),
+                    ],
+                ]);
+            }
 
     public function show(Request $request, Sale $sale)
     {
