@@ -76,7 +76,7 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
                     })}
                 </p>
                 <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold md:text-3xl">
-                    {sapaan()}, {nama}!
+                    {sapaan()}!
                     <Hand className="h-7 w-7" />
                 </h1>
                 <p className="mt-1 text-orange-50">

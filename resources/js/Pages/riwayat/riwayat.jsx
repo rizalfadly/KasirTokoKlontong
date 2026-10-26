@@ -1,14 +1,17 @@
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
+import { Receipt, Wallet, BarChart3, Search, Printer } from 'lucide-react';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 
-function Stat({ icon, label, value, bg }) {
+function Stat({ icon: Icon, label, value, bg, iconClass = 'text-slate-700' }) {
     return (
         <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-            <div className={'flex h-12 w-12 items-center justify-center rounded-xl text-2xl ' + bg}>{icon}</div>
+            <div className={'flex h-12 w-12 items-center justify-center rounded-xl ' + bg}>
+                <Icon className={'h-6 w-6 ' + iconClass} />
+            </div>
             <div>
                 <div className="text-sm text-slate-500">{label}</div>
                 <div className="text-xl font-bold">{value}</div>
@@ -44,9 +47,9 @@ export default function Riwayat({ sales }) {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-                <Stat icon="🧾" label="Jumlah transaksi" value={aktif.length} bg="bg-sky-100" />
-                <Stat icon="💰" label="Total penjualan" value={rp(totalOmzet)} bg="bg-emerald-100" />
-                <Stat icon="📊" label="Rata-rata per transaksi" value={rp(rata)} bg="bg-amber-100" />
+                <Stat icon={Receipt}   label="Jumlah transaksi"       value={aktif.length}   bg="bg-sky-100"     iconClass="text-sky-700" />
+                <Stat icon={Wallet}    label="Total penjualan"        value={rp(totalOmzet)} bg="bg-emerald-100" iconClass="text-emerald-700" />
+                <Stat icon={BarChart3} label="Rata-rata per transaksi" value={rp(rata)}       bg="bg-amber-100"   iconClass="text-amber-700" />
             </div>
 
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
@@ -72,17 +75,20 @@ export default function Riwayat({ sales }) {
                                 Dibatalkan ({voidCount})
                             </button>
                         </div>
-                    <input
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 sm:w-64"
-                        placeholder="🔍 Cari invoice atau kasir..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+                    <div className="relative w-full sm:w-64">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                            className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                            placeholder="Cari invoice atau kasir..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
                 </div>
 
                 {filtered.length === 0 ? (
                     <div className="py-12 text-center text-slate-400">
-                        <div className="text-4xl">🧾</div>
+                        <Receipt className="mx-auto h-10 w-10" />
                         <p className="mt-2 text-sm">
                             {sales.length === 0 ? 'Belum ada transaksi.' : 'Transaksi tidak ditemukan.'}
                         </p>
@@ -111,7 +117,9 @@ export default function Riwayat({ sales }) {
                                         {/* Invoice */}
                                         <td className="py-3">
                                             <div className="flex items-center gap-3">
-                                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50">🧾</div>
+                                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                                                    <Receipt className="h-4 w-4" />
+                                                </div>
                                                 <div>
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-medium">{s.invoice}</span>
@@ -185,13 +193,13 @@ export default function Riwayat({ sales }) {
                                                 Lihat
                                             </Link>
                                             <a
-                                                href={`/riwayat/${s.id}?print=1`}
-                                                target="_blank"
-                                                rel="noopener"
-                                                className="rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800 hover:bg-amber-200"
-                                            >
-                                                🖨️ Cetak
-                                            </a>
+                                            href={`/riwayat/${s.id}?print=1`}
+                                            target="_blank"
+                                            rel="noopener"
+                                            className="inline-flex items-center gap-1.5 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-800 hover:bg-amber-200"
+                                        >
+                                            <Printer className="h-4 w-4" /> Cetak
+                                        </a>
                                         </td>
                                     </tr>
                                 ))}

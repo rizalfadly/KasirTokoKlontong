@@ -1,8 +1,8 @@
-import { Head} from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import { num } from '../lib/format';
 import ProductThumb from './ProductThumb';
-
+import { Hand, Egg, Package, CheckCircle2, AlertTriangle, Ban, Search } from 'lucide-react';
 
 const STATUS = {
     tersedia: { label: 'Tersedia', badge: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-400' },
@@ -27,10 +27,12 @@ function sapaan() {
     return 'Selamat malam';
 }
 
-function Chip({ icon, label, value, bg }) {
+function Chip({ icon: Icon, label, value, bg, iconClass = 'text-slate-700' }) {
     return (
         <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur-md">
-            <div className={'flex h-11 w-11 items-center justify-center rounded-xl text-xl ' + bg}>{icon}</div>
+            <div className={'flex h-11 w-11 items-center justify-center rounded-xl ' + bg}>
+                <Icon className={'h-5 w-5 ' + iconClass} />
+            </div>
             <div>
                 <div className="text-2xl font-bold leading-none">{value}</div>
                 <div className="mt-1 text-xs text-slate-500">{label}</div>
@@ -58,8 +60,8 @@ export default function GuestDashboard({ stockList }) {
 
             {/* Banner */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-400 to-orange-500 p-6 text-white shadow-lg shadow-orange-200 md:p-8">
-                <div className="pointer-events-none absolute -right-4 -top-6 select-none text-[9rem] leading-none opacity-20">
-                    🥚
+                <div className="pointer-events-none absolute -right-6 -top-8 select-none opacity-20">
+                    <Egg className="h-40 w-40" strokeWidth={1.5} />
                 </div>
                 <p className="text-sm text-orange-50">
                     {new Date().toLocaleDateString('id-ID', {
@@ -69,28 +71,25 @@ export default function GuestDashboard({ stockList }) {
                         year: 'numeric',
                     })}
                 </p>
-                <h1 className="mt-1 text-2xl font-bold md:text-3xl">{sapaan()}! 👋</h1>
+                <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold md:text-3xl">
+                    {sapaan()}!
+                    <Hand className="h-7 w-7" />
+                </h1>
                 <p className="mt-1 text-orange-50">Cek ketersediaan stok produk kami hari ini.</p>
-                {/* <Link
-                    href="/login"
-                    className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 font-bold text-orange-600 shadow-md transition hover:scale-105 hover:shadow-xl"
-                >
-                    🔑 Masuk
-                </Link> */}
             </div>
 
             {/* Ringkasan */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <Chip icon="📦" label="Total produk" value={stockList.length} bg="bg-sky-100" />
-                <Chip icon="✅" label="Tersedia" value={counts.tersedia} bg="bg-emerald-100" />
-                <Chip icon="⚠️" label="Menipis" value={counts.menipis} bg="bg-orange-100" />
-                <Chip icon="⛔" label="Habis" value={counts.habis} bg="bg-red-100" />
+                <Chip icon={Package} label="Total produk" value={stockList.length} bg="bg-sky-100" iconClass="text-sky-700" />
+                <Chip icon={CheckCircle2} label="Tersedia" value={counts.tersedia} bg="bg-emerald-100" iconClass="text-emerald-700" />
+                <Chip icon={AlertTriangle} label="Menipis" value={counts.menipis} bg="bg-orange-100" iconClass="text-orange-700" />
+                <Chip icon={Ban} label="Habis" value={counts.habis} bg="bg-red-100" iconClass="text-red-600" />
             </div>
 
             {/* Cari + filter */}
             <div className="flex flex-wrap items-center gap-3">
                 <div className="relative w-full sm:w-72">
-                    <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">🔍</span>
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input
                         className="w-full rounded-2xl border border-slate-200 bg-white/90 py-2.5 pl-11 pr-4 text-sm shadow-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                         placeholder="Cari produk..."
@@ -119,7 +118,7 @@ export default function GuestDashboard({ stockList }) {
             {/* Kartu produk */}
             {shown.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 py-14 text-center text-slate-400">
-                    <div className="text-4xl">📦</div>
+                    <Package className="mx-auto h-10 w-10" />
                     <p className="mt-2 text-sm">
                         {stockList.length === 0 ? 'Belum ada produk.' : 'Produk tidak ditemukan.'}
                     </p>

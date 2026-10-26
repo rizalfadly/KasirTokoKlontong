@@ -1,6 +1,7 @@
 import { Head, Link, usePage, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { num } from '../../lib/format';
+import { ArrowLeft, Ban, Printer } from 'lucide-react';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -92,16 +93,16 @@ export default function Nota({ sale, store }) {
 
             {/* Toolbar (tidak ikut tercetak) */}
             <div className="mx-auto mb-4 flex max-w-2xl flex-wrap items-center justify-between gap-3 print:hidden">
-                <Link href="/riwayat" className="text-sm font-medium text-orange-600 hover:underline">
-                    ← Kembali ke riwayat
+                <Link href="/riwayat" className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:underline">
+                    <ArrowLeft className="h-4 w-4" /> Kembali ke riwayat
                 </Link>
                 <div className="flex flex-wrap items-center gap-2">
                     {canVoid && (
                         <button
                             onClick={() => setShowVoid(true)}
-                            className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
                         >
-                            🚫 Batalkan transaksi
+                            <Ban className="h-4 w-4" /> Batalkan transaksi
                         </button>
                     )}
                     <select
@@ -117,9 +118,9 @@ export default function Nota({ sale, store }) {
                     </select>
                     <button
                         onClick={() => window.print()}
-                        className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105"
                     >
-                        🖨️ Cetak
+                        <Printer className="h-4 w-4" /> Cetak
                     </button>
                 </div>
             </div>
@@ -197,7 +198,9 @@ export default function Nota({ sale, store }) {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 print:hidden">
                     <form onSubmit={submitVoid} className="w-full max-w-md space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
                         <div>
-                            <h2 className="text-lg font-bold text-red-600">🚫 Batalkan transaksi?</h2>
+                            <h2 className="flex items-center gap-2 text-lg font-bold text-red-600">
+                                <Ban className="h-5 w-5" /> Batalkan transaksi?
+                            </h2>
                             <p className="mt-1 text-sm text-slate-500">
                                 Transaksi <b>{sale.invoice}</b> ({rp(sale.total)}) akan ditandai batal dan stok semua barangnya
                                 dikembalikan. Tindakan ini tidak bisa diurungkan.
