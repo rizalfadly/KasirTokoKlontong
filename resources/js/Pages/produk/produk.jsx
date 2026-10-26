@@ -2,10 +2,8 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import StockModal from '../../Components/StockModal';
 import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
-import { num } from '../../lib/format';
-import ProductThumb from '../../Components/ProductThumb';
 import ProductImageField from '../../Components/ProductImageField';
-
+import { Plus, Search, Package, PackagePlus, Pencil, Trash2 } from 'lucide-react';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -13,11 +11,12 @@ const rp = (n) =>
 const inputClass =
     'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100';
 
-function Field({ label, error, ...props }) {
+function Field({ label, error, hint, ...props }) {
     return (
         <label className="block">
             <span className="mb-1 block text-sm font-medium text-slate-600">{label}</span>
             <input {...props} className={inputClass} />
+            {hint && !error && <span className="mt-1 block text-xs text-slate-400">{hint}</span>}
             {error && <span className="mt-1 block text-xs text-red-600">{error}</span>}
         </label>
     );
@@ -46,10 +45,11 @@ function StockBadge({ stock }) {
     return <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">Aman</span>;
 }
 
-export default function ProdukIndex({ products,
+export default function ProdukIndex({
+    products,
     units = ['kilo', 'liter', 'pcs', 'buah', 'unit', 'plastik', 'dus'],
-    decimalUnits = ['kilo', 'liter'], }) {
-
+    decimalUnits = ['kilo', 'liter'],
+}) {
     const [search, setSearch] = useState('');
     const [editing, setEditing] = useState(null);
 
@@ -61,11 +61,11 @@ export default function ProdukIndex({ products,
     const editForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
 
     const q = search.trim().toLowerCase();
-        const filtered = products.filter(
-            (p) =>
-                p.name.toLowerCase().includes(q) ||
-                (p.sku ?? '').toLowerCase().includes(q) ||
-                (p.barcode ?? '').toLowerCase().includes(q),
+    const filtered = products.filter(
+        (p) =>
+            p.name.toLowerCase().includes(q) ||
+            (p.sku ?? '').toLowerCase().includes(q) ||
+            (p.barcode ?? '').toLowerCase().includes(q),
     );
 
     function submitAdd(e) {
@@ -76,16 +76,16 @@ export default function ProdukIndex({ products,
     function openEdit(p) {
         editForm.clearErrors();
         editForm.setData({
-                            name: p.name,
-                            price: p.price,
-                            stock: p.stock,
-                            unit: p.unit ?? 'pcs',
-                            icon: p.icon ?? '',
-                            image: '',
-                            sku: p.sku ?? '',
-                            barcode: p.barcode ?? '',
-                            remove_image: false,
-                        });
+            name: p.name,
+            price: p.price,
+            stock: p.stock,
+            unit: p.unit ?? 'pcs',
+            icon: p.icon ?? '',
+            image: '',
+            sku: p.sku ?? '',
+            barcode: p.barcode ?? '',
+            remove_image: false,
+        });
         setEditing(p);
     }
 
@@ -112,12 +112,15 @@ export default function ProdukIndex({ products,
 
             {/* Form tambah */}
             <form onSubmit={submitAdd} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h2 className="mb-4 font-semibold">➕ Tambah produk</h2>
+                <h2 className="mb-4 flex items-center gap-2 font-semibold">
+                    <Plus className="h-5 w-5 text-orange-500" />
+                    Tambah produk
+                </h2>
                 <div className="mb-4">
                     <ProductImageField form={addForm} />
                 </div>
                 <div className="grid gap-4 md:grid-cols-5">
-                    <div className="md:col-span-2">
+                    <div className="space-y-4 md:col-span-2">
                         <Field
                             label="Nama produk"
                             placeholder="mis. Telur Ayam Negeri"
@@ -154,7 +157,7 @@ export default function ProdukIndex({ products,
                     <Field
                         label="Stok"
                         type="number"
-                        step={decimalUnits.includes(addForm.data.unit) ? '0.001' : '1'} 
+                        step={decimalUnits.includes(addForm.data.unit) ? '0.001' : '1'}
                         min="0"
                         placeholder="50"
                         value={addForm.data.stock}
@@ -166,7 +169,7 @@ export default function ProdukIndex({ products,
                         value={addForm.data.unit}
                         onChange={(e) => addForm.setData('unit', e.target.value)}
                         error={addForm.errors.unit}
-                    /> 
+                    />
                 </div>
                 <button
                     disabled={addForm.processing}
@@ -180,17 +183,20 @@ export default function ProdukIndex({ products,
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <h2 className="font-semibold">Daftar produk ({products.length})</h2>
-                    <input
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 sm:w-64"
-                        placeholder="🔍 Cari produk..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+                    <div className="relative w-full sm:w-64">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                            className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                            placeholder="Cari produk..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
                 </div>
 
                 {filtered.length === 0 ? (
                     <div className="py-12 text-center text-slate-400">
-                        <div className="text-4xl">📦</div>
+                        <Package className="mx-auto h-10 w-10" />
                         <p className="mt-2 text-sm">
                             {products.length === 0 ? 'Belum ada produk. Tambahkan produk pertama kamu.' : 'Produk tidak ditemukan.'}
                         </p>
@@ -229,21 +235,21 @@ export default function ProdukIndex({ products,
                                         <td className="py-3 text-right">
                                             <button
                                                 onClick={() => setStockFor(p)}
-                                                className="mr-1 rounded-lg px-3 py-1.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
+                                                className="mr-1 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50"
                                             >
-                                                Stok
+                                                <PackagePlus className="h-4 w-4" /> Stok
                                             </button>
                                             <button
                                                 onClick={() => openEdit(p)}
-                                                className="mr-1 rounded-lg px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                                                className="mr-1 inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50"
                                             >
-                                                Edit
+                                                <Pencil className="h-4 w-4" /> Edit
                                             </button>
                                             <button
                                                 onClick={() => remove(p)}
-                                                className="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                                                className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
                                             >
-                                                Hapus
+                                                <Trash2 className="h-4 w-4" /> Hapus
                                             </button>
                                         </td>
                                     </tr>
@@ -258,7 +264,10 @@ export default function ProdukIndex({ products,
             {editing && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <form onSubmit={submitEdit} className="w-full max-w-lg space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
-                        <h2 className="text-lg font-bold">✏️ Edit produk</h2>
+                        <h2 className="flex items-center gap-2 text-lg font-bold">
+                            <Pencil className="h-5 w-5 text-orange-500" />
+                            Edit produk
+                        </h2>
                         <ProductImageField form={editForm} existingUrl={editing.image_url} />
                         <Field
                             label="Nama produk"
@@ -336,7 +345,6 @@ export default function ProdukIndex({ products,
                     onClose={() => setStockFor(null)}
                 />
             )}
-
         </div>
     );
 }

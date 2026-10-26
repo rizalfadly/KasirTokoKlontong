@@ -2,6 +2,9 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import KasirLayout from '../Layouts/KasirLayout';
 import GuestDashboard from '../Components/GuestDashboard';
 import { num } from '../lib/format';
+import { Wallet, Receipt, FileCheckCorner, Package,
+        Egg, Hand, MailCheck, CheckCircle2, ShoppingBag, Medal,
+ } from "lucide-react";
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -16,12 +19,16 @@ function sapaan() {
     return 'Selamat malam';
 }
 
-function Stat({ icon, label, value, bg, valueClass = '' }) {
+function Stat({ icon: Icon, label, value, bg, iconClass = "text-slate-700", valueClass = "text-slate-900" }) {
     return (
-        <div className={card + ' p-5 transition hover:-translate-y-0.5 hover:shadow-md'}>
-            <div className={'flex h-11 w-11 items-center justify-center rounded-xl text-xl ' + bg}>{icon}</div>
-            <div className="mt-4 text-sm text-slate-500">{label}</div>
-            <div className={'mt-1 text-2xl font-bold ' + valueClass}>{value}</div>
+        <div className="flex items-center gap-3 rounded-2xl border bg-white p-4 shadow-sm">
+        <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${bg}`}>
+            <Icon className={`h-5 w-5 ${iconClass}`} strokeWidth={2} />
+        </div>
+        <div>
+            <div className="text-xs text-slate-500">{label}</div>
+            <div className={`text-lg font-bold ${valueClass}`}>{value}</div>
+        </div>
         </div>
     );
 }
@@ -49,7 +56,7 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
     const max = Math.max(...chart.map((c) => c.total), 1);
     const weekTotal = chart.reduce((s, c) => s + c.total, 0);
     const topMax = Math.max(...topProducts.map((p) => p.qty), 1);
-    const medals = ['🥇', '🥈', '🥉'];
+    const medalColors = ['text-amber-500', 'text-slate-400', 'text-orange-700'];
 
     return (
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
@@ -57,8 +64,8 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
 
             {/* Banner */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-400 via-orange-400 to-orange-500 p-6 text-white shadow-lg shadow-orange-200 md:p-8">
-                <div className="pointer-events-none absolute -right-4 -top-6 select-none text-[9rem] leading-none opacity-20">
-                    🥚
+                <div className="pointer-events-none absolute -right-6 -top-8 select-none opacity-20">
+                    <Egg className="h-40 w-40" strokeWidth={1.5} />
                 </div>
                 <p className="text-sm text-orange-50">
                     {new Date().toLocaleDateString('id-ID', {
@@ -68,8 +75,9 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
                         year: 'numeric',
                     })}
                 </p>
-                <h1 className="mt-1 text-2xl font-bold md:text-3xl">
-                    {sapaan()}, {nama}! 👋
+                <h1 className="mt-1 flex items-center gap-2 text-2xl font-bold md:text-3xl">
+                    {sapaan()}, {nama}!
+                    <Hand className="h-7 w-7" />
                 </h1>
                 <p className="mt-1 text-orange-50">
                     Penjualan hari ini <b className="text-white">{rp(stats.todaySales)}</b> dari {stats.todayCount} transaksi.
@@ -85,23 +93,27 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
                 {pendingOpnames > 0 && (
                     <Link
                         href="/opname"
-                        className="block rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-sky-700 transition hover:bg-sky-100"
+                        className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-sky-700 transition hover:bg-sky-100"
                     >
-                        📬 <b>{pendingOpnames}</b> opname menunggu persetujuanmu. Klik untuk meninjau →
+                        <MailCheck className="h-5 w-5 shrink-0" />
+                        <span>
+                            <b>{pendingOpnames}</b> opname menunggu persetujuanmu. Klik untuk meninjau →
+                        </span>
                     </Link>
                 )}
 
             {/* Statistik */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <Stat icon="💰" label="Penjualan hari ini" value={rp(stats.todaySales)} bg="bg-emerald-100" valueClass="text-emerald-700" />
-                <Stat icon="🧾" label="Transaksi hari ini" value={stats.todayCount} bg="bg-sky-100" />
-                <Stat icon="🥚" label="Item terjual hari ini" value={num(stats.todayItems)} bg="bg-amber-100" />
+                <Stat icon={Wallet} label="Penjualan hari ini" value={rp(stats.todaySales)} bg="bg-emerald-100" iconClass="text-emerald-700" valueClass="text-emerald-700" />
+                <Stat icon={Receipt} label="Transaksi hari ini" value={stats.todayCount} bg="bg-sky-100" iconClass="text-sky-700" />
+                <Stat icon={FileCheckCorner} label="Item terjual hari ini" value={num(stats.todayItems)} bg="bg-amber-100" iconClass="text-amber-700" />
                 <Stat
-                    icon="⚠️"
+                    icon={Package}
                     label="Stok menipis"
                     value={stats.lowStockCount}
                     bg="bg-red-100"
-                    valueClass={stats.lowStockCount > 0 ? 'text-red-600' : ''}
+                    iconClass="text-red-600"
+                    valueClass={stats.lowStockCount > 0 ? 'text-red-600' : undefined}
                 />
             </div>
 
@@ -160,7 +172,7 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
                 >
                     {lowStock.length === 0 && (
                         <div className="py-6 text-center text-sm text-slate-400">
-                            <div className="text-3xl">✅</div>
+                           <CheckCircle2 className="mx-auto mb-1 h-8 w-8 text-emerald-500" />
                             Semua stok aman
                         </div>
                     )}
@@ -189,17 +201,21 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
             <div className="grid gap-4 lg:grid-cols-2">
                 <Panel title="Produk terlaris (30 hari)">
                     {topProducts.length === 0 && (
-                        <div className="py-6 text-center text-sm text-slate-400">
-                            <div className="text-3xl">🛍️</div>
-                            Belum ada penjualan
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                            <Receipt className="h-5 w-5" />
                         </div>
                     )}
                     <ul className="space-y-4">
                         {topProducts.map((p, i) => (
                             <li key={i}>
                                 <div className="mb-1 flex justify-between text-sm">
-                                    <span className="font-medium">
-                                        {medals[i] ?? `${i + 1}.`} {p.name}
+                                    <span className="inline-flex items-center gap-1.5 font-medium">
+                                        {i < 3 ? (
+                                            <Medal className={`h-4 w-4 ${medalColors[i]}`} />
+                                        ) : (
+                                            <span className="w-4 text-center text-slate-400">{i + 1}.</span>
+                                        )}
+                                        {p.name}
                                     </span>
                                     <span className="font-semibold text-slate-600">{num(p.qty)} terjual</span>
                                 </div>
@@ -224,7 +240,7 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
                 >
                     {recent.length === 0 && (
                         <div className="py-6 text-center text-sm text-slate-400">
-                            <div className="text-3xl">🧾</div>
+                            <Receipt className="mx-auto mb-1 h-8 w-8" />
                             Belum ada transaksi
                         </div>
                     )}

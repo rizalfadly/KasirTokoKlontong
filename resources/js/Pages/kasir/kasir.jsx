@@ -3,6 +3,10 @@ import { useMemo, useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num } from '../../lib/format';
 import ProductThumb from '../../Components/ProductThumb';
+import {
+    Search, Egg, ShoppingCart, ShoppingBasket, CheckCircle2, Printer,
+    Store, ShoppingBag, Banknote, QrCode, Landmark,
+} from 'lucide-react';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -11,14 +15,14 @@ const round3 = (n) => Math.round(n * 1000) / 1000;
 
 // Asal penjualan (channel) dan cara bayar (khusus offline)
 const CHANNELS = [
-    { key: 'offline', label: '🏪 Offline' },
-    { key: 'tokopedia', label: '🟢 Tokopedia' },
-    { key: 'shopee', label: '🟠 Shopee' },
+    { key: 'offline', label: 'Offline', icon: Store },
+    { key: 'tokopedia', label: 'Tokopedia', icon: ShoppingBag },
+    { key: 'shopee', label: 'Shopee', icon: ShoppingBag },
 ];
 const METHODS = [
-    { key: 'tunai', label: '💵 Tunai' },
-    { key: 'qris', label: '📱 QRIS' },
-    { key: 'transfer', label: '🏦 Transfer' },
+    { key: 'tunai', label: 'Tunai', icon: Banknote },
+    { key: 'qris', label: 'QRIS', icon: QrCode },
+    { key: 'transfer', label: 'Transfer', icon: Landmark },
 ];
 const PAY_LABEL = { tunai: 'Tunai', qris: 'QRIS', transfer: 'Transfer', marketplace: 'Via marketplace' };
 
@@ -164,31 +168,28 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
             <div className="grid gap-6 lg:grid-cols-3">
                 {/* Daftar produk */}
                 <section className="space-y-4 lg:col-span-2">
-                    <div className="relative">
+                    <div>
+                        <div className="relative">
+                            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                            <input
+                                className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 shadow-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                                placeholder="Scan barcode atau cari produk..."
+                                onKeyDown={handleScan}
+                                autoFocus
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
                         {scanMsg && (
-                            <div
-                                className={
-                                    'mt-2 rounded-xl px-4 py-2 text-sm font-medium ' +
-                                    (scanMsg.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600')
-                                }
-                            >
+                            <div className={'mt-2 rounded-xl px-4 py-2 text-sm font-medium ' + (scanMsg.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600')}>
                                 {scanMsg.text}
                             </div>
                         )}
-                        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">🔍</span>
-                        <input
-                            className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 shadow-sm outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                            placeholder="Scan barcode atau cari produk..."
-                            onKeyDown={handleScan}
-                            autoFocus
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
                     </div>
 
                     {filtered.length === 0 && (
                         <div className="rounded-2xl border border-dashed border-slate-200 bg-white py-12 text-center text-slate-400">
-                            <div className="text-4xl">🥚</div>
+                            <Egg className="mx-auto h-10 w-10" />
                             <p className="mt-2 text-sm">Produk tidak ditemukan atau stok habis.</p>
                         </div>
                     )}
@@ -237,7 +238,10 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                 {/* Keranjang */}
                 <section className="self-start rounded-2xl border border-slate-100 bg-white p-5 shadow-sm lg:sticky lg:top-6">
                     <div className="mb-4 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">🛒 Keranjang</h2>
+                        <h2 className="flex items-center gap-2 text-lg font-semibold">
+                            <ShoppingCart className="h-5 w-5 text-orange-500" />
+                            Keranjang
+                        </h2>
                         {cart.length > 0 && (
                             <button onClick={() => setCart([])} className="text-sm text-red-500 hover:underline">
                                 Kosongkan
@@ -247,7 +251,7 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
 
                     {cart.length === 0 ? (
                         <div className="py-10 text-center text-slate-400">
-                            <div className="text-4xl">🧺</div>
+                            <ShoppingBasket className="mx-auto h-10 w-10" />
                             <p className="mt-2 text-sm">Belum ada item. Klik produk untuk menambah.</p>
                         </div>
                     ) : (
@@ -313,12 +317,13 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                                         type="button"
                                         onClick={() => setChannel(c.key)}
                                         className={
-                                            'rounded-xl px-3 py-2 text-sm font-semibold transition ' +
+                                            'inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition ' +
                                             (channel === c.key
                                                 ? 'bg-orange-500 text-white shadow'
                                                 : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50')
                                         }
                                     >
+                                        <c.icon className="h-4 w-4" />
                                         {c.label}
                                     </button>
                                 ))}
@@ -336,12 +341,13 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                                             type="button"
                                             onClick={() => setMethod(m.key)}
                                             className={
-                                                'rounded-lg px-3 py-1.5 text-xs font-semibold transition ' +
+                                                'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ' +
                                                 (method === m.key
                                                     ? 'bg-slate-900 text-white'
                                                     : 'bg-amber-100 text-amber-800 hover:bg-amber-200')
                                             }
                                         >
+                                            <m.icon className="h-3.5 w-3.5" />
                                             {m.label}
                                         </button>
                                     ))}
@@ -397,9 +403,8 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                         <button
                             onClick={checkout}
                             disabled={!canPay}
-                            className="w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-4 text-lg font-bold text-white shadow-lg shadow-orange-200 transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-                        >
-                            {processing ? 'Memproses...' : '✅ Bayar'}
+                            className="flex w-full items-center justify-center gap-2 rounded-2xl ... ">
+                                {processing ? 'Memproses...' : (<><CheckCircle2 className="h-5 w-5" /> Bayar</>)}
                         </button>
                     </div>
                 </section>
@@ -409,8 +414,8 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
             {done && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <div className="w-full max-w-sm rounded-3xl bg-white p-8 text-center shadow-2xl">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl">
-                            ✅
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                            <CheckCircle2 className="h-9 w-9" />
                         </div>
                         <h2 className="mt-4 text-xl font-bold">Transaksi berhasil!</h2>
                         <div className="mt-5 space-y-2 text-sm">
@@ -421,7 +426,6 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                             <div className="flex justify-between">
                                 <span className="text-slate-500">Asal</span>
                                 <span className="font-semibold">
-                                    {CHANNELS.find((c) => c.key === done.channel)?.label.replace(/^\S+\s/, '')}
                                 </span>
                             </div>
                             <div className="flex justify-between">
@@ -441,9 +445,8 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                             href="/riwayat/terakhir"
                             target="_blank"
                             rel="noopener"
-                            className="mt-6 block w-full rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 text-center font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105"
-                        >
-                            🖨️ Cetak Nota
+                            className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl ...">
+                            <Printer className="h-5 w-5" /> Cetak Nota
                         </a>
                         <button
                             onClick={() => setDone(null)}
