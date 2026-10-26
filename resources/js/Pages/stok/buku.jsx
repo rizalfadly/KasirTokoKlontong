@@ -1,8 +1,9 @@
 import { Head, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num } from '../../lib/format';
 import { Search, BookOpen } from 'lucide-react';
+
 
 const TYPES = {
     initial: ['Saldo awal', 'bg-slate-100 text-slate-600'],
@@ -18,8 +19,15 @@ export default function BukuStok({ movements, filters }) {
     const [type, setType] = useState(filters.type ?? '');
 
     function apply(next = {}) {
-        router.get('/buku-stok', { q, type, ...next }, { preserveState: true, preserveScroll: true, replace: true });
-    }
+            router.get('/buku-stok', { q, type, ...next }, { preserveState: true, preserveScroll: true, replace: true });
+        }
+
+        // Cari otomatis 400 ms setelah berhenti mengetik
+        useEffect(() => {
+            if (q === (filters.q ?? '')) return;
+            const t = setTimeout(() => apply({ q }), 400);
+            return () => clearTimeout(t);
+        }, [q]);
 
     return (
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
@@ -35,12 +43,11 @@ export default function BukuStok({ movements, filters }) {
                     <div className="relative w-full sm:w-72">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input
-                            className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                            placeholder="Cari nama atau SKU, lalu Enter"
-                            value={q}
-                            onChange={(e) => setQ(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && apply()}
-                        />
+                                className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                                placeholder="Cari nama atau SKU..."
+                                value={q}
+                                onChange={(e) => setQ(e.target.value)}
+                            />
                     </div>
                     <select
                         value={type}
