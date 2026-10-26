@@ -1,6 +1,7 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
+import { UserRoundPlus } from 'lucide-react';
 
 const ROLE_STYLE = {
     owner: 'bg-violet-100 text-violet-700',
@@ -84,7 +85,7 @@ export default function Pengguna({ users, roles }) {
 
             {/* Form tambah */}
             <form onSubmit={submitAdd} className={card + ' p-5'}>
-                <h2 className="mb-4 font-semibold">➕ Tambah akun</h2>
+                <h2 className="mb-4 font-semibold"> <UserRoundPlus/></h2>
                 <div className="grid gap-4 md:grid-cols-4">
                     <Field
                         label="Nama lengkap"
