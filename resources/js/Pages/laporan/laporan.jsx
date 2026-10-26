@@ -1,6 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num } from '../../lib/format';
+import {
+    Wallet, Receipt, Egg, BarChart3, Printer, Download,
+    AlertTriangle, Inbox, ChevronLeft, ChevronRight,
+} from 'lucide-react';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -33,10 +37,12 @@ function shift(type, v, dir) {
     return new Date(Date.UTC(y, m - 1, d + dir)).toISOString().slice(0, 10);
 }
 
-function Stat({ icon, label, value, bg, sub, subClass = 'text-slate-400' }) {
+function Stat({ icon: Icon, label, value, bg, iconClass = 'text-slate-700', sub, subClass = 'text-slate-400' }) {
     return (
         <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-            <div className={'flex h-11 w-11 items-center justify-center rounded-xl text-xl ' + bg}>{icon}</div>
+            <div className={'flex h-11 w-11 items-center justify-center rounded-xl ' + bg}>
+                <Icon className={'h-5 w-5 ' + iconClass} />
+            </div>
             <div className="mt-4 text-sm text-slate-500">{label}</div>
             <div className="mt-1 text-2xl font-bold">{value}</div>
             {sub && <div className={'mt-1 text-xs font-medium ' + subClass}>{sub}</div>}
@@ -123,7 +129,7 @@ export default function Laporan({ type, value, label, summary, chart, topProduct
 
                 <div className="flex items-center gap-1.5">
                     <button onClick={() => go(type, shift(type, value, -1))} className={navBtn} aria-label="Sebelumnya">
-                        ←
+                        <ChevronLeft className="h-4 w-4" />
                     </button>
 
                     {type === 'harian' && (
@@ -153,43 +159,45 @@ export default function Laporan({ type, value, label, summary, chart, topProduct
                     )}
 
                     <button onClick={() => go(type, shift(type, value, 1))} className={navBtn} aria-label="Berikutnya">
-                        →
+                        <ChevronRight className="h-4 w-4" />
                     </button>
                 </div>
 
                 <div className="ml-auto flex gap-2">
                     <button
                         onClick={() => window.print()}
-                        className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105"
                     >
-                        🖨️ Cetak
+                        <Printer className="h-4 w-4" /> Cetak
                     </button>
                     <a
                         href={`/laporan/export?type=${type}&value=${value}`}
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                     >
-                        ⬇️ CSV
+                        <Download className="h-4 w-4" /> CSV
                     </a>
                 </div>
             </div>
 
             {/* Ringkasan */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <Stat icon="💰" label="Total penjualan" value={rp(summary.total)} bg="bg-emerald-100" sub={sub} subClass={subClass} />
-                <Stat icon="🧾" label="Jumlah transaksi" value={summary.count} bg="bg-sky-100" />
-                <Stat icon="🥚" label="Item terjual" value={num(summary.items)} bg="bg-amber-100" />
-                <Stat icon="📊" label="Rata-rata / transaksi" value={rp(summary.average)} bg="bg-violet-100" />
+                <Stat icon={Wallet}    label="Total penjualan"       value={rp(summary.total)}   bg="bg-emerald-100" iconClass="text-emerald-700" sub={sub} subClass={subClass} />
+                <Stat icon={Receipt}   label="Jumlah transaksi"      value={summary.count}       bg="bg-sky-100"     iconClass="text-sky-700" />
+                <Stat icon={Egg}       label="Item terjual"          value={num(summary.items)}  bg="bg-amber-100"   iconClass="text-amber-700" />
+                <Stat icon={BarChart3} label="Rata-rata / transaksi" value={rp(summary.average)} bg="bg-violet-100"  iconClass="text-violet-700" />
             </div>
             {summary.voidedCount > 0 && (
-                <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                    ⚠️ {summary.voidedCount} transaksi dibatalkan pada periode ini ({rp(summary.voidedTotal)}). Tidak dihitung
-                    dalam angka di atas. Lihat detailnya di Riwayat.
+                <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                        {summary.voidedCount} transaksi dibatalkan pada periode ini ({rp(summary.voidedTotal)}). Tidak dihitung
+                        dalam angka di atas. Lihat detailnya di Riwayat.
+                    </span>
                 </div>
             )}
-
             {summary.count === 0 && (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white py-12 text-center text-slate-400">
-                    <div className="text-4xl">📭</div>
+                    <Inbox className="mx-auto h-10 w-10" />
                     <p className="mt-2 text-sm">Belum ada transaksi pada periode ini.</p>
                 </div>
             )}

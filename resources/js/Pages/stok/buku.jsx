@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num } from '../../lib/format';
+import { Search, BookOpen } from 'lucide-react';
 
 const TYPES = {
     initial: ['Saldo awal', 'bg-slate-100 text-slate-600'],
@@ -31,13 +32,16 @@ export default function BukuStok({ movements, filters }) {
 
             <div className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur-md">
                 <div className="mb-4 flex flex-wrap items-center gap-3">
-                    <input
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100 sm:w-72"
-                        placeholder="🔍 Cari nama atau SKU, lalu Enter"
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && apply()}
-                    />
+                    <div className="relative w-full sm:w-72">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                            className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                            placeholder="Cari nama atau SKU, lalu Enter"
+                            value={q}
+                            onChange={(e) => setQ(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && apply()}
+                        />
+                    </div>
                     <select
                         value={type}
                         onChange={(e) => {
@@ -57,7 +61,7 @@ export default function BukuStok({ movements, filters }) {
 
                 {movements.length === 0 ? (
                     <div className="py-12 text-center text-slate-400">
-                        <div className="text-4xl">📒</div>
+                        <BookOpen className="mx-auto h-10 w-10" />
                         <p className="mt-2 text-sm">Belum ada catatan.</p>
                     </div>
                 ) : (

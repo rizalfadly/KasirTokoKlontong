@@ -1,13 +1,14 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import { ShoppingCart, Package, TrendingUp, Hand, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 const inputCls =
     'w-full rounded-xl border border-slate-200 bg-white/90 px-4 py-3 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100';
 
 const FEATURES = [
-    { icon: '🛒', text: 'Transaksi cepat dengan kembalian otomatis' },
-    { icon: '📦', text: 'Stok dan satuan produk selalu terpantau' },
-    { icon: '📈', text: 'Laporan harian, bulanan, dan tahunan' },
+    { icon: ShoppingCart, text: 'Transaksi cepat dengan kembalian otomatis' },
+    { icon: Package, text: 'Stok dan satuan produk selalu terpantau' },
+    { icon: TrendingUp, text: 'Laporan harian, bulanan, dan tahunan' },
 ];
 
 function Brand({ size = 'lg' }) {
@@ -78,7 +79,9 @@ export default function Login({ status, canResetPassword }) {
                                 key={f.text}
                                 className="flex max-w-md items-center gap-3 rounded-2xl border border-white/70 bg-white/60 px-4 py-3 shadow-sm backdrop-blur"
                             >
-                                <span className="text-xl">{f.icon}</span>
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
+                                    <f.icon className="h-5 w-5" />
+                                </span>
                                 <span className="text-sm font-medium text-slate-600">{f.text}</span>
                             </li>
                         ))}
@@ -93,7 +96,10 @@ export default function Login({ status, canResetPassword }) {
                     </div>
 
                     <div className="rounded-3xl border border-white/70 bg-white/80 p-8 shadow-xl shadow-orange-100 backdrop-blur-xl">
-                        <h2 className="text-2xl font-bold">Selamat datang 👋</h2>
+                        <h2 className="flex items-center gap-2 text-2xl font-bold">
+                            Selamat datang
+                            <Hand className="h-6 w-6 text-orange-500" />
+                        </h2>
                         <p className="mt-1 text-sm text-slate-500">Masuk untuk membuka kasir dan laporan.</p>
 
                         {status && (
@@ -138,14 +144,15 @@ export default function Login({ status, canResetPassword }) {
                                         onChange={(e) => setData('password', e.target.value)}
                                         placeholder="Masukkan kata sandi"
                                         autoComplete="current-password"
-                                        className={inputCls + ' pr-20'}
+                                        className={inputCls + ' pr-12'}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShow((s) => !s)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
+                                        aria-label={show ? 'Sembunyikan kata sandi' : 'Lihat kata sandi'}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
                                     >
-                                        {show ? 'Sembunyikan' : 'Lihat'}
+                                        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </button>
                                 </div>
                                 {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
@@ -171,8 +178,11 @@ export default function Login({ status, canResetPassword }) {
                     </div>
 
                     <div className="mt-5 text-center">
-                        <Link href="/dashboard" className="text-sm text-slate-500 hover:text-orange-600">
-                            ← Kembali ke dashboard
+                        <Link
+                            href="/dashboard"
+                            className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-orange-600"
+                        >
+                            <ArrowLeft className="h-4 w-4" /> Kembali ke dashboard
                         </Link>
                     </div>
                 </div>

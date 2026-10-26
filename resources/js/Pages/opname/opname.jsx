@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import KasirLayout from '../../Layouts/KasirLayout';
+import { MailCheck, Plus, Calculator } from 'lucide-react';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -32,14 +33,18 @@ export default function Opname({ opnames }) {
             </div>
 
             {pending > 0 && (
-                <div className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-700">
-                    📬 {pending} opname menunggu persetujuan owner.
+                <div className="flex items-center gap-2 rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                    <MailCheck className="h-4 w-4 shrink-0" />
+                    <span>{pending} opname menunggu persetujuan owner.</span>
                 </div>
             )}
 
             {/* Mulai opname baru */}
             <form onSubmit={submit} className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur-md">
-                <h2 className="mb-4 font-semibold">➕ Mulai opname baru</h2>
+                <h2 className="mb-4 flex items-center gap-2 font-semibold">
+                    <Plus className="h-5 w-5 text-orange-500" />
+                    Mulai opname baru
+                </h2>
                 <div className="grid gap-4 md:grid-cols-3">
                     <label className="block">
                         <span className="mb-1 block text-sm font-medium text-slate-600">Cakupan (awalan SKU)</span>
@@ -81,7 +86,7 @@ export default function Opname({ opnames }) {
 
                 {opnames.length === 0 ? (
                     <div className="py-12 text-center text-slate-400">
-                        <div className="text-4xl">🧮</div>
+                        <Calculator className="mx-auto h-10 w-10" />
                         <p className="mt-2 text-sm">Belum ada opname.</p>
                     </div>
                 ) : (

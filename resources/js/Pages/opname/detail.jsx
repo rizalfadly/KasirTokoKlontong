@@ -2,6 +2,10 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num } from '../../lib/format';
+import {
+    ArrowLeft, Send, Undo2, CheckCircle2, Printer, Download,
+    Search, Calculator, Check,
+} from 'lucide-react';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -156,8 +160,8 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
 
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <Link href="/opname" className="text-sm font-medium text-orange-600 hover:underline print:hidden">
-                        ← Semua opname
+                    <Link href="/opname" className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:underline print:hidden">
+                        <ArrowLeft className="h-4 w-4" /> Semua opname
                     </Link>
                     <h1 className="mt-1 flex flex-wrap items-center gap-3 text-2xl font-bold">
                         <span className="font-mono">{opname.code}</span>
@@ -182,9 +186,9 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
                             <button
                                 onClick={sendToOwner}
                                 disabled={counted.length === 0}
-                                className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105 disabled:opacity-40"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105 disabled:opacity-40"
                             >
-                                📤 Kirim ke owner
+                                <Send className="h-4 w-4" /> Kirim ke owner
                             </button>
                         </>
                     )}
@@ -192,15 +196,15 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
                         <>
                             <button
                                 onClick={() => setReturning(true)}
-                                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                             >
-                                ↩️ Kembalikan
+                                <Undo2 className="h-4 w-4" /> Kembalikan
                             </button>
                             <button
                                 onClick={approve}
-                                className="rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
                             >
-                                ✅ Setujui
+                                <CheckCircle2 className="h-4 w-4" /> Setujui
                             </button>
                         </>
                     )}
@@ -208,15 +212,15 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
                         <>
                             <button
                                 onClick={() => window.print()}
-                                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                             >
-                                🖨️ Cetak
+                                <Printer className="h-4 w-4" /> Cetak
                             </button>
                             <a
                                 href={`/opname/${opname.id}/export`}
-                                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                             >
-                                ⬇️ CSV
+                                <Download className="h-4 w-4" /> CSV
                             </a>
                         </>
                     )}
@@ -226,8 +230,9 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
             {/* Pesan status */}
             {errorText && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{errorText}</div>}
             {draft && opname.review_note && (
-                <div className="rounded-xl bg-orange-50 px-4 py-3 text-sm text-orange-700">
-                    ↩️ Dikembalikan owner: {opname.review_note}
+                <div className="flex items-center gap-2 rounded-xl bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                    <Undo2 className="h-4 w-4 shrink-0" />
+                    <span>Dikembalikan owner: {opname.review_note}</span>
                 </div>
             )}
             {opname.status === 'submitted' && !isOwner && (
@@ -236,9 +241,12 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
                 </div>
             )}
             {opname.status === 'approved' && (
-                <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                    ✅ Disetujui oleh {opname.approver ?? '-'} pada {fmtDate(opname.approved_at)}.
-                    {opname.review_note ? ` Catatan: ${opname.review_note}.` : ''} Selisih sudah dicatat di Buku Stok.
+                <div className="flex items-start gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                        Disetujui oleh {opname.approver ?? '-'} pada {fmtDate(opname.approved_at)}.
+                        {opname.review_note ? ` Catatan: ${opname.review_note}.` : ''} Selisih sudah dicatat di Buku Stok.
+                    </span>
                 </div>
             )}
 
@@ -261,15 +269,18 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
             <div className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur-md">
                 {draft && (
                     <div className="mb-4 space-y-3 print:hidden">
-                        <input
-                            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                            placeholder="🔍 Scan barcode / ketik SKU lalu Enter, atau cari nama produk"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            onKeyDown={handleScan}
-                            autoComplete="off"
-                            autoFocus
-                        />
+                        <div className="relative">
+                            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                                placeholder="Scan barcode / ketik SKU lalu Enter, atau cari nama produk"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={handleScan}
+                                autoComplete="off"
+                                autoFocus
+                            />
+                        </div>
                         {scanMsg && (
                             <div
                                 className={
@@ -296,7 +307,7 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
 
                 {shown.length === 0 ? (
                     <div className="py-12 text-center text-slate-400">
-                        <div className="text-4xl">🧮</div>
+                        <Calculator className="mx-auto h-10 w-10" />
                         <p className="mt-2 text-sm">Tidak ada produk yang cocok.</p>
                     </div>
                 ) : (
@@ -358,7 +369,11 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
                                                             : 'text-emerald-600')
                                                 }
                                             >
-                                                {!done ? '—' : diff === 0 ? '✓ Cocok' : `${diff > 0 ? '+' : ''}${num(diff)} ${r.unit}`}
+                                                {!done ? '—' : diff === 0 ? (
+                                                    <span className="inline-flex items-center justify-end gap-1">
+                                                        <Check className="h-4 w-4" /> Cocok
+                                                    </span>
+                                                ) : `${diff > 0 ? '+' : ''}${num(diff)} ${r.unit}`}
                                             </td>
                                             <td
                                                 className={
@@ -386,7 +401,9 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 print:hidden">
                     <form onSubmit={giveBack} className="w-full max-w-md space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
                         <div>
-                            <h2 className="text-lg font-bold">↩️ Kembalikan ke admin</h2>
+                            <h2 className="flex items-center gap-2 text-lg font-bold">
+                                <Undo2 className="h-5 w-5 text-orange-500" /> Kembalikan ke admin
+                            </h2>
                             <p className="mt-1 text-sm text-slate-500">
                                 Opname dibuka lagi supaya admin bisa menghitung ulang. Stok belum berubah.
                             </p>
