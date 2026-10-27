@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Illuminate\Validation\Rule;
 
 class StockController extends Controller
 {
@@ -16,15 +17,21 @@ class StockController extends Controller
     public function adjust(Request $request, Product $product)
     {
         $data = $request->validate([
-            'mode'   => ['required', 'in:masuk,koreksi'],
-            'qty'    => ['required', 'numeric', 'min:0', 'max:999999'],
-            'reason' => ['required', 'string', 'min:3', 'max:200'],
+            'mode'        => ['required', 'in:masuk,koreksi'],
+            'qty'         => ['required', 'numeric', 'min:0', 'max:999999'],
+            'reason'      => ['required', 'string', 'min:3', 'max:200'],
+            'supplier_id' => ['nullable', Rule::exists('suppliers', 'id')],
+            'unit_cost'   => ['nullable', 'integer', 'min:0', 'max:999999999'],
         ]);
 
         // Koreksi stok khusus owner
         abort_if($data['mode'] === 'koreksi' && $request->user()->role !== 'owner', 403);
 
-        DB::transaction(function () use ($product, $data, $request) {
+        // Supplier dan harga beli hanya berlaku untuk stok masuk
+        $supplierId = $data['mode'] === 'masuk' ? ($data['supplier_id'] ?? null) : null;
+        $unitCost = $data['mode'] === 'masuk' ? ($data['unit_cost'] ?? null) : null;
+
+        DB::transaction(function () use ($product, $data, $request, $supplierId, $unitCost) {
             $locked = Product::whereKey($product->id)->lockForUpdate()->first();
             $qty = round((float) $data['qty'], 3);
 
@@ -51,7 +58,17 @@ class StockController extends Controller
                 }
             }
 
-            StockService::move($locked, $delta, $type, $request->user()->id, $data['reason']);
+            StockService::move(
+                $locked,
+                $delta,
+                $type,
+                $request->user()->id,
+                $data['reason'],
+                null,
+                null,
+                $supplierId,
+                $unitCost,
+            );
         });
 
         return back();
@@ -63,7 +80,7 @@ class StockController extends Controller
         $q = trim((string) $request->query('q', ''));
         $type = (string) $request->query('type', '');
 
-        $movements = StockMovement::with(['product:id,name,sku,unit', 'user:id,username'])
+        $movements = StockMovement::with(['product:id,name,sku,unit', 'user:id,username', 'supplier:id,name'])
             ->when($type !== '', fn ($query) => $query->where('type', $type))
             ->when($q !== '', fn ($query) => $query->whereHas(
                 'product',

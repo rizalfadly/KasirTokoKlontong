@@ -119,7 +119,10 @@ export default function BukuStok({ movements, filters }) {
                                                 {num(m.stock_after)} {unit}
                                             </td>
                                             <td className="py-3 text-sm text-slate-500">{m.user?.username ?? 'Sistem'}</td>
-                                            <td className="py-3 text-sm text-slate-500">{m.reason ?? ''}</td>
+                                            <td className="py-3 text-sm text-slate-500">
+                                                {m.reason ?? ''}
+                                                {m.supplier && <div className="text-xs text-emerald-700">Dari: {m.supplier.name}</div>}
+                                            </td>
                                         </tr>
                                     );
                                 })}

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use App\Models\StockMovement;
 
 class SupplierController extends Controller
 {
@@ -19,11 +20,40 @@ class SupplierController extends Controller
 
     public function index()
     {
+        // Riwayat pembelian (stok masuk yang memilih supplier), terbaru dulu
+        $purchases = StockMovement::where('type', 'purchase')
+            ->whereNotNull('supplier_id')
+            ->with(['product:id,name,sku,unit', 'user:id,username'])
+            ->latest('id')
+            ->limit(1000)
+            ->get()
+            ->groupBy('supplier_id');
+
+        // Ringkasan seumur hidup per supplier
+        $stats = StockMovement::where('type', 'purchase')
+            ->whereNotNull('supplier_id')
+            ->selectRaw('supplier_id, COUNT(*) as trips, SUM(qty_change * COALESCE(unit_cost, 0)) as total, MAX(created_at) as last_at')
+            ->groupBy('supplier_id')
+            ->get()
+            ->keyBy('supplier_id');
+
+        $suppliers = Supplier::with('prices.product:id,name,sku,unit')
+            ->orderByDesc('is_active')
+            ->orderBy('name')
+            ->get()
+            ->each(function ($s) use ($purchases, $stats) {
+                $s->setAttribute('purchases', $purchases->get($s->id, collect())->take(30)->values());
+
+                $st = $stats->get($s->id);
+                $s->setAttribute('purchase_stats', $st ? [
+                    'count'   => (int) $st->trips,
+                    'total'   => (int) round($st->total),
+                    'last_at' => $st->last_at,
+                ] : null);
+            });
+
         return Inertia::render('supplier/supplier', [
-            'suppliers' => Supplier::with('prices.product:id,name,sku,unit')
-                ->orderByDesc('is_active')
-                ->orderBy('name')
-                ->get(),
+            'suppliers' => $suppliers,
             'products'  => Product::orderBy('name')->get(['id', 'name', 'sku', 'unit']),
             'types'     => self::TYPES,
             'terms'     => self::TERMS,

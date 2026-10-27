@@ -1,7 +1,8 @@
 import { router, useForm } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, Clock, MapPin, MessageCircle, Pencil, Phone, Trash2, User, Wallet, X } from 'lucide-react';
-import { rp } from '../../lib/format';
+//import { rp } from '../../lib/format';
 import { TERM_LABEL, TYPE_LABEL, TYPE_STYLE, waLink } from './constants';
+import { num, rp } from '../../lib/format';
 
 function Info({ icon: Icon, children }) {
     return (
@@ -222,6 +223,65 @@ export default function SupplierDetail({ supplier, products, onClose, onEdit }) 
                     </form>
                     <p className="mt-1 text-xs text-slate-400">
                         Memilih produk yang sudah ada harganya akan mengubah harganya. Harga lama tercatat sebagai pembanding.
+                    </p>
+                </div>
+                {/* Riwayat pembelian */}
+                <div>
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                        <div className="text-sm font-semibold">Riwayat pembelian</div>
+                        {supplier.purchase_stats && (
+                            <div className="text-xs text-slate-500">
+                                {supplier.purchase_stats.count}x kulakan · total {rp(supplier.purchase_stats.total)}
+                            </div>
+                        )}
+                    </div>
+
+                    {(supplier.purchases ?? []).length === 0 ? (
+                        <p className="rounded-xl bg-slate-50 px-4 py-4 text-center text-sm text-slate-400">
+                            Belum ada pembelian. Pilih supplier ini saat mencatat Stok masuk di halaman Produk.
+                        </p>
+                    ) : (
+                        <div className="overflow-x-auto rounded-xl border border-slate-100">
+                            <table className="w-full min-w-[520px] text-left text-sm">
+                                <thead>
+                                    <tr className="border-b border-slate-100 text-xs text-slate-400">
+                                        <th className="px-3 py-2 font-medium">Tanggal</th>
+                                        <th className="px-3 py-2 font-medium">Produk</th>
+                                        <th className="px-3 py-2 text-right font-medium">Jumlah</th>
+                                        <th className="px-3 py-2 text-right font-medium">Harga</th>
+                                        <th className="px-3 py-2 text-right font-medium">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {supplier.purchases.map((m) => (
+                                        <tr key={m.id}>
+                                            <td className="px-3 py-2 text-slate-500">
+                                                {new Date(m.created_at).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'short',
+                                                    year: 'numeric',
+                                                })}
+                                                <div className="text-xs text-slate-400">{m.user?.username ?? ''}</div>
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <div className="font-medium">{m.product?.name}</div>
+                                                <div className="font-mono text-xs text-slate-400">{m.product?.sku}</div>
+                                            </td>
+                                            <td className="px-3 py-2 text-right">
+                                                {num(m.qty_change)} {m.product?.unit}
+                                            </td>
+                                            <td className="px-3 py-2 text-right">{m.unit_cost !== null ? rp(m.unit_cost) : '—'}</td>
+                                            <td className="px-3 py-2 text-right font-semibold">
+                                                {m.unit_cost !== null ? rp(Math.round(m.qty_change * m.unit_cost)) : '—'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                    <p className="mt-1 text-xs text-slate-400">
+                        Menampilkan 30 pembelian terakhir. Total hanya menghitung pembelian yang harganya diisi.
                     </p>
                 </div>
             </div>

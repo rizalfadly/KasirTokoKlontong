@@ -49,6 +49,8 @@ export default function ProdukIndex({
     products,
     units = ['kilo', 'liter', 'pcs', 'buah', 'unit', 'plastik', 'dus'],
     decimalUnits = ['kilo', 'liter'],
+    suppliers = [],
+    supplierPrices = [],
 }) {
     const [search, setSearch] = useState('');
     const [editing, setEditing] = useState(null);
@@ -337,11 +339,13 @@ export default function ProdukIndex({
             )}
 
             {stockFor && (
-                <StockModal
+              <StockModal
                     key={stockFor.id}
                     product={stockFor}
                     decimalUnits={decimalUnits}
                     isOwner={isOwner}
+                    suppliers={suppliers}
+                    supplierPrices={supplierPrices}
                     onClose={() => setStockFor(null)}
                 />
             )}

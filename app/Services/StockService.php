@@ -29,6 +29,8 @@ class StockService
         ?string $reason = null,
         ?int $saleId = null,
         ?int $opnameId = null,
+        ?int $supplierId = null,
+        ?int $unitCost = null,
     ): StockMovement {
         $delta = round($delta, 3);
         $query = Product::withTrashed()->whereKey($product->id);
@@ -46,8 +48,10 @@ class StockService
             'type'        => $type,
             'qty_change'  => $delta,
             'stock_after' => $after,
+            'unit_cost'   => $unitCost,
             'user_id'     => $userId,
             'sale_id'     => $saleId,
+            'supplier_id' => $supplierId,
             'opname_id'   => $opnameId,
             'reason'      => $reason,
         ]);

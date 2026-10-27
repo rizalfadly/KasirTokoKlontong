@@ -4,21 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\ProductImage;
+use App\Models\Supplier;
+use App\Models\SupplierPrice;
+use App\Services\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use App\Services\StockService;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $isOwner = $request->user()->role === 'owner';
+
         return Inertia::render('produk/produk', [
-            'products'     => Product::orderBy('name')->get(),
-            'units'        => Product::UNITS,
-            'decimalUnits' => Product::DECIMAL_UNITS,
+            'products'       => Product::orderBy('name')->get(),
+            'units'          => Product::UNITS,
+            'decimalUnits'   => Product::DECIMAL_UNITS,
+            'suppliers'      => Supplier::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type']),
+            // Harga beli dari supplier hanya dikirim ke owner
+            'supplierPrices' => $isOwner ? SupplierPrice::get(['supplier_id', 'product_id', 'price']) : [],
         ]);
     }
 
