@@ -27,7 +27,7 @@ export default function Riwayat({ sales, filters, summary }) {
     const onlyVoid = filters.void;
     const rows = sales.data;
 
-    console.log(sales);
+    //console.log(sales);
 
     function apply(next = {}) {
         router.get(

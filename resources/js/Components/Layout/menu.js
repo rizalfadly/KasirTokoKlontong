@@ -12,6 +12,7 @@ import {
     Store,
     TrendingUp,
     Users,
+    Truck,
 } from 'lucide-react';
 
 // Menu dikelompokkan. Tanpa "roles" = tampil untuk semua yang sudah login.
@@ -44,6 +45,7 @@ export const menu = [
         items: [
             { label: 'Pengguna', href: '/pengguna', icon: Users },
             { label: 'Toko', href: '/pengaturan', icon: Store },
+            { label: 'Supplier', href: '/supplier', icon: Truck }
         ],
     },
 ];

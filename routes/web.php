@@ -7,6 +7,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\StoreSettingController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckRole;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +61,15 @@ Route::middleware(['auth', CheckRole::class . ':owner'])->group(function () {
     Route::delete('/pengguna/{user}', [UserController::class, 'destroy']);
     Route::post('/opname/{opname}/setujui', [OpnameController::class, 'approve'])->whereNumber('opname');
     Route::post('/opname/{opname}/kembalikan', [OpnameController::class, 'reject'])->whereNumber('opname');
+
+    Route::get('/supplier', [SupplierController::class, 'index']);
+    Route::post('/supplier', [SupplierController::class, 'store']);
+    Route::put('/supplier/{supplier}', [SupplierController::class, 'update'])->whereNumber('supplier');
+    Route::delete('/supplier/{supplier}', [SupplierController::class, 'destroy'])->whereNumber('supplier');
+    Route::get('/supplier/{supplier}/kartu', [SupplierController::class, 'card'])->whereNumber('supplier');
+    Route::post('/supplier/{supplier}/harga', [SupplierController::class, 'savePrice'])->whereNumber('supplier');
+    Route::delete('/supplier/{supplier}/harga/{productId}', [SupplierController::class, 'removePrice'])
+        ->whereNumber(['supplier', 'productId']);
 });
 
 require __DIR__ . '/auth.php';
