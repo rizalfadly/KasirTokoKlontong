@@ -33,8 +33,8 @@ export const menu = [
         roles: ['owner', 'admin'],
         items: [
             { label: 'Produk', href: '/produk', icon: Package, quick: true },
-            { label: 'Buku Stok', href: '/buku-stok', icon: BookOpen },
             { label: 'Stok Opname', href: '/opname', icon: ClipboardCheck },
+            { label: 'Buku Stok', href: '/buku-stok', icon: BookOpen },
         ],
     },
     { label: 'Laporan', href: '/laporan', icon: TrendingUp, roles: ['owner', 'admin'] },
