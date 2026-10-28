@@ -1,11 +1,12 @@
 import { router } from '@inertiajs/react';
-import { Ban, Bell, CheckCheck, ClipboardCheck, Info, Package, PackagePlus, SlidersHorizontal } from 'lucide-react';
+import { Ban, Bell, CheckCheck, ClipboardCheck, Info, Package, PackagePlus, SlidersHorizontal, Wallet } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const POLL_MS = 10000; // cek notifikasi baru tiap 20 detik
 
 const KIND = {
     opname: [ClipboardCheck, 'bg-sky-100 text-sky-700'],
+    shift: [Wallet, 'bg-emerald-100 text-emerald-700'],
     void: [Ban, 'bg-red-100 text-red-600'],
     stock_low: [Package, 'bg-orange-100 text-orange-600'],
     stock_out: [Package, 'bg-red-100 text-red-600'],

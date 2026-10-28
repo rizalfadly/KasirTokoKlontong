@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { ArrowLeft, Printer, Banknote, QrCode, Landmark, ShoppingBag, Ban } from 'lucide-react';
+import { ArrowLeft, Printer, Banknote, QrCode, Landmark, ShoppingBag, Ban, Send } from 'lucide-react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num, rp } from '../../lib/format';
 
@@ -18,6 +18,29 @@ export default function Rekap({ filters, byMethod, total, count, voided, perKasi
     const [f, setF] = useState(filters);
     const [modal, setModal] = useState('');
     const [fisik, setFisik] = useState('');
+    const [note, setNote] = useState('');
+    const [sending, setSending] = useState(false);
+    const [err, setErr] = useState('');
+
+    function kirim() {
+        if (!confirm('Kirim rekap ini ke owner? Angka akan dikunci.')) return;
+        router.post(
+            '/setoran',
+            {
+                date: f.date,
+                from: f.from,
+                to: f.to,
+                opening_cash: Number(modal || 0),
+                counted_cash: Number(fisik || 0),
+                note,
+            },
+            {
+                onStart: () => { setSending(true); setErr(''); },
+                onFinish: () => setSending(false),
+                onError: (e) => setErr(Object.values(e)[0]),
+            },
+        );
+    }
 
     function apply(next) {
         const v = { ...f, ...next };
@@ -145,6 +168,25 @@ export default function Rekap({ filters, byMethod, total, count, voided, perKasi
                     </div>
                 )}
             </section>
+
+            {perKasir.length === 0 && (   // hanya kasir (bukan owner) yang mengirim
+                <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm print:hidden">
+                    <input
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="Catatan untuk owner (opsional), mis. selisih karena uang kembalian"
+                        className={inputCls + ' w-full'}
+                    />
+                    {err && <p className="mt-2 text-sm text-red-600">{err}</p>}
+                    <button
+                        onClick={kirim}
+                        disabled={sending || fisik === '' || count === 0}
+                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 font-bold text-white shadow-md shadow-orange-200 hover:brightness-105 disabled:opacity-40"
+                    >
+                        <Send className="h-5 w-5" /> {sending ? 'Mengirim...' : 'Kirim ke owner'}
+                    </button>
+                </section>
+            )}
 
             {/* Per kasir (owner/admin) */}
             {perKasir.length > 0 && (

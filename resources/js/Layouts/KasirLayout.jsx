@@ -37,7 +37,7 @@ export default function KasirLayout({ children }) {
 
     // Sudah login: menu disaring sesuai peran
     const sections = menuFor(user.role);
-    const canNotify = ['owner', 'admin'].includes(user.role);
+    const canNotify = ['owner', 'admin', 'kasir'].includes(user.role);
 
     return (
         <div className={shell}>

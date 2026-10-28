@@ -1,16 +1,17 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OpnameController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
+use App\Http\Controllers\ShiftClosingController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\StoreSettingController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckRole;
-use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -30,6 +31,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/riwayat/rekap', [SaleController::class, 'rekap']);
     Route::get('/riwayat/{sale}', [SaleController::class, 'show'])->whereNumber('sale');
     Route::post('/riwayat/{sale}/batal', [SaleController::class, 'void'])->whereNumber('sale');
+
+    Route::get('/setoran', [ShiftClosingController::class, 'index']);
+    Route::post('/setoran', [ShiftClosingController::class, 'store']);
+    Route::get('/setoran/{closing}', [ShiftClosingController::class, 'show']);
+    Route::post('/setoran/{closing}/setujui', [ShiftClosingController::class, 'approve']);
+    Route::post('/setoran/{closing}/kembalikan', [ShiftClosingController::class, 'reject']);
+
+    Route::get('/notifikasi', [NotificationController::class, 'index']);
+    Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll']);
+    Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'read']);
 });
 
 // Hanya owner dan admin
@@ -49,10 +60,6 @@ Route::middleware(['auth', CheckRole::class . ':owner,admin'])->group(function (
     Route::post('/opname/{opname}/kirim', [OpnameController::class, 'submit'])->whereNumber('opname');
     Route::delete('/opname/{opname}', [OpnameController::class, 'destroy'])->whereNumber('opname');
     Route::get('/opname/{opname}/export', [OpnameController::class, 'export'])->whereNumber('opname');
-
-    Route::get('/notifikasi', [NotificationController::class, 'index']);
-    Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll']);
-    Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'read']);
   
 });
 
