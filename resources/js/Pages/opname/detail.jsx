@@ -37,6 +37,7 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
     const { auth, errors } = usePage().props;
     const isOwner = auth?.user?.role === 'owner';
     const draft = opname.status === 'draft';
+    const canCount = draft && !isOwner;
 
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('semua');
@@ -336,7 +337,7 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
                                                 {num(r.system_qty)} {r.unit}
                                             </td>
                                             <td className="py-3 text-right">
-                                                {draft ? (
+                                                {canCount ? (
                                                     <div className="flex items-center justify-end gap-2">
                                                         <input
                                                             ref={(el) => (inputs.current[r.product_id] = el)}

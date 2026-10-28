@@ -145,6 +145,11 @@ class OpnameController extends Controller
     // Simpan hasil hitung satu produk (dikosongkan = hapus hitungan)
     public function count(Request $request, StockOpname $opname)
     {
+        abort_unless(
+            $request->user()->role === 'owner' || $opname->created_by === $request->user()->id,
+            403
+        );
+
         $data = $request->validate([
             'product_id'  => ['required', 'integer'],
             'counted_qty' => ['nullable', 'numeric', 'min:0', 'max:999999'],
@@ -201,6 +206,11 @@ class OpnameController extends Controller
     // Admin mengirim hasil hitung ke owner
     public function submit(Request $request, StockOpname $opname)
         {
+            abort_unless(
+                $request->user()->role === 'owner' || $opname->created_by === $request->user()->id,
+                403
+            );
+
             if ($opname->status !== 'draft') {
                 throw ValidationException::withMessages(['status' => 'Opname ini sudah dikirim.']);
             }
@@ -228,6 +238,7 @@ class OpnameController extends Controller
     // Owner menyetujui: selisih masuk ke buku stok
     public function approve(Request $request, StockOpname $opname)
     {
+        abort_unless($request->user()->role === 'owner', 403);
         $data = $request->validate(['review_note' => ['nullable', 'string', 'max:200']]);
 
         DB::transaction(function () use ($opname, $data, $request) {
@@ -287,28 +298,30 @@ class OpnameController extends Controller
 
     // Owner mengembalikan ke admin untuk dihitung ulang
     public function reject(Request $request, StockOpname $opname)
-    {
-        $data = $request->validate(['review_note' => ['required', 'string', 'min:3', 'max:200']]);
+        {
+            abort_unless($request->user()->role === 'owner', 403);
 
-        if ($opname->status !== 'submitted') {
-            throw ValidationException::withMessages([
-                'status' => 'Opname ini tidak sedang menunggu persetujuan.',
-            ]);
+            $data = $request->validate(['review_note' => ['required', 'string', 'min:3', 'max:200']]);
+
+            if ($opname->status !== 'submitted') {
+                throw ValidationException::withMessages([
+                    'status' => 'Opname ini tidak sedang menunggu persetujuan.',
+                ]);
+            }
+
+            $opname->update(['status' => 'draft', 'submitted_at' => null, 'review_note' => $data['review_note']]);
+
+            Notifier::toUser(
+                $opname->created_by,
+                'opname',
+                'Opname dikembalikan',
+                "{$opname->code}: {$data['review_note']}",
+                "/opname/{$opname->id}",
+                $request->user()->id,
+            );
+
+            return redirect('/dashboard');
         }
-
-        $opname->update(['status' => 'draft', 'submitted_at' => null, 'review_note' => $data['review_note']]);
-
-        Notifier::toUser(
-            $opname->created_by,
-            'opname',
-            'Opname dikembalikan',
-            "{$opname->code}: {$data['review_note']}",
-            "/opname/{$opname->id}",
-            $request->user()->id,
-        );
-
-        return back();
-    }
 
     // Hapus opname yang masih dihitung
     public function destroy(Request $request, StockOpname $opname)
