@@ -10,6 +10,7 @@ use App\Http\Controllers\StoreSettingController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckRole;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -47,6 +48,10 @@ Route::middleware(['auth', CheckRole::class . ':owner,admin'])->group(function (
     Route::post('/opname/{opname}/kirim', [OpnameController::class, 'submit'])->whereNumber('opname');
     Route::delete('/opname/{opname}', [OpnameController::class, 'destroy'])->whereNumber('opname');
     Route::get('/opname/{opname}/export', [OpnameController::class, 'export'])->whereNumber('opname');
+
+    Route::get('/notifikasi', [NotificationController::class, 'index']);
+    Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll']);
+    Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'read']);
   
 });
 

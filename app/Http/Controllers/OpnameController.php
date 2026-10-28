@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Services\Notifier;
 
 class OpnameController extends Controller
 {
@@ -198,20 +199,31 @@ class OpnameController extends Controller
     }
 
     // Admin mengirim hasil hitung ke owner
-    public function submit(StockOpname $opname)
-    {
-        if ($opname->status !== 'draft') {
-            throw ValidationException::withMessages(['status' => 'Opname ini sudah dikirim.']);
+    public function submit(Request $request, StockOpname $opname)
+        {
+            if ($opname->status !== 'draft') {
+                throw ValidationException::withMessages(['status' => 'Opname ini sudah dikirim.']);
+            }
+
+            $count = $opname->items()->count();
+
+            if ($count === 0) {
+                throw ValidationException::withMessages(['status' => 'Belum ada produk yang dihitung.']);
+            }
+
+            $opname->update(['status' => 'submitted', 'submitted_at' => now(), 'review_note' => null]);
+
+            Notifier::toRoles(
+                ['owner'],
+                'opname',
+                'Opname menunggu persetujuan',
+                "{$opname->code} dikirim oleh {$request->user()->username} ({$count} produk dihitung).",
+                "/opname/{$opname->id}",
+                $request->user()->id,
+            );
+
+            return back();
         }
-
-        if (! $opname->items()->exists()) {
-            throw ValidationException::withMessages(['status' => 'Belum ada produk yang dihitung.']);
-        }
-
-        $opname->update(['status' => 'submitted', 'submitted_at' => now(), 'review_note' => null]);
-
-        return back();
-    }
 
     // Owner menyetujui: selisih masuk ke buku stok
     public function approve(Request $request, StockOpname $opname)
@@ -261,6 +273,14 @@ class OpnameController extends Controller
                 'review_note' => $data['review_note'] ?? null,
             ]);
         });
+        Notifier::toUser(
+            $opname->created_by,
+            'opname',
+            'Opname disetujui',
+            "{$opname->code} disetujui oleh {$request->user()->username}. Selisih sudah dicatat di Buku Stok.",
+            "/opname/{$opname->id}",
+            $request->user()->id,
+        );
 
         return back();
     }
@@ -277,6 +297,15 @@ class OpnameController extends Controller
         }
 
         $opname->update(['status' => 'draft', 'submitted_at' => null, 'review_note' => $data['review_note']]);
+
+        Notifier::toUser(
+            $opname->created_by,
+            'opname',
+            'Opname dikembalikan',
+            "{$opname->code}: {$data['review_note']}",
+            "/opname/{$opname->id}",
+            $request->user()->id,
+        );
 
         return back();
     }

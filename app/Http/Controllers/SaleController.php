@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Illuminate\Validation\Rule;
 use App\Services\StockService;
+use App\Services\Notifier;
 
 class SaleController extends Controller
 {
@@ -227,6 +228,15 @@ class SaleController extends Controller
                 'void_reason' => $data['reason'],
             ]);
         });
+
+        Notifier::toRoles(
+            ['owner'],
+            'void',
+            'Transaksi dibatalkan',
+            "{$sale->invoice} (Rp " . number_format($sale->total, 0, ',', '.') . ") dibatalkan oleh {$request->user()->username}. Alasan: {$data['reason']}",
+            "/riwayat/{$sale->id}",
+            $request->user()->id,
+        );
 
         return back();
     }

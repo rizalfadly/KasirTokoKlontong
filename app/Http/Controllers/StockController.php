@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Illuminate\Validation\Rule;
+use App\Models\Supplier;
+use App\Services\Notifier;
 
 class StockController extends Controller
 {
@@ -31,7 +33,7 @@ class StockController extends Controller
         $supplierId = $data['mode'] === 'masuk' ? ($data['supplier_id'] ?? null) : null;
         $unitCost = $data['mode'] === 'masuk' ? ($data['unit_cost'] ?? null) : null;
 
-        DB::transaction(function () use ($product, $data, $request, $supplierId, $unitCost) {
+        $delta = DB::transaction(function () use ($product, $data, $request, $supplierId, $unitCost) {
             $locked = Product::whereKey($product->id)->lockForUpdate()->first();
             $qty = round((float) $data['qty'], 3);
 
@@ -69,7 +71,36 @@ class StockController extends Controller
                 $supplierId,
                 $unitCost,
             );
+
+            return $delta;
         });
+
+        // Beri tahu pihak lain
+        $actor = $request->user();
+        $amount = rtrim(rtrim(number_format(abs($delta), 3, ',', ''), '0'), ',');
+
+        if ($data['mode'] === 'masuk') {
+            $supplierName = $supplierId ? Supplier::find($supplierId)?->name : null;
+
+            Notifier::toRoles(
+                ['owner'],
+                'purchase',
+                'Stok masuk dicatat',
+                "{$actor->username} mencatat stok masuk {$product->name}: {$amount} {$product->unit}"
+                    . ($supplierName ? " dari {$supplierName}" : '') . '.',
+                '/buku-stok',
+                $actor->id,
+            );
+        } else {
+            Notifier::toRoles(
+                ['admin'],
+                'adjustment',
+                'Stok dikoreksi owner',
+                "{$product->name}: " . ($delta > 0 ? '+' : '-') . "{$amount} {$product->unit}. Alasan: {$data['reason']}",
+                '/buku-stok',
+                $actor->id,
+            );
+        }
 
         return back();
     }

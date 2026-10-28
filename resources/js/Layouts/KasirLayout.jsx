@@ -3,6 +3,7 @@ import { LogIn } from 'lucide-react';
 import Background from '../Components/Layout/Background';
 import Brand from '../Components/Layout/Brand';
 import MobileNav from '../Components/Layout/MobileNav';
+import NotificationBell from '../Components/Layout/NotificationBell';
 import Sidebar from '../Components/Layout/Sidebar';
 import { menuFor } from '../Components/Layout/menu';
 
@@ -36,6 +37,7 @@ export default function KasirLayout({ children }) {
 
     // Sudah login: menu disaring sesuai peran
     const sections = menuFor(user.role);
+    const canNotify = ['owner', 'admin'].includes(user.role);
 
     return (
         <div className={shell}>
@@ -43,6 +45,23 @@ export default function KasirLayout({ children }) {
             <Sidebar user={user} sections={sections} />
 
             <div className="lg:pl-64 print:pl-0">
+                {/* Bar atas: logo (HP) dan lonceng notifikasi */}
+                <header
+                    className={
+                        'sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-white/60 bg-white/60 px-4 backdrop-blur-xl md:px-8 print:hidden ' +
+                        (canNotify ? '' : 'lg:hidden')
+                    }
+                >
+                    <div className="min-w-0 lg:hidden">
+                        <Brand />
+                    </div>
+                    {canNotify && (
+                        <div className="ml-auto">
+                            <NotificationBell />
+                        </div>
+                    )}
+                </header>
+
                 <main className="pb-24 lg:pb-8">{children}</main>
             </div>
 

@@ -3,7 +3,7 @@ import KasirLayout from '../Layouts/KasirLayout';
 import GuestDashboard from '../Components/GuestDashboard';
 import { num } from '../lib/format';
 import { Wallet, Receipt, FileCheckCorner, Package,
-        Egg, Hand, MailCheck, CheckCircle2, ShoppingBag, Medal,
+        Egg, Hand, CheckCircle2, ShoppingBag, Medal,
  } from "lucide-react";
 
 const rp = (n) =>
@@ -45,7 +45,7 @@ function Panel({ title, action, children }) {
     );
 }
 
-export default function Dashboard({ stats, chart, topProducts, lowStock, recent, pendingOpnames = 0, stockList = [] }) {
+export default function Dashboard({ stats, chart, topProducts, lowStock, recent, stockList = [] }) {
     const { auth } = usePage().props;
     const isGuest = !auth?.user;
 
@@ -90,7 +90,7 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
                 </Link> */}
             </div>
 
-                {pendingOpnames > 0 && (
+                {/* {pendingOpnames > 0 && (
                     <Link
                         href="/opname"
                         className="flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-4 text-sky-700 transition hover:bg-sky-100"
@@ -100,7 +100,7 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
                             <b>{pendingOpnames}</b> opname menunggu persetujuanmu. Klik untuk meninjau →
                         </span>
                     </Link>
-                )}
+                )} */}
 
             {/* Statistik */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
