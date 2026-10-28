@@ -156,4 +156,62 @@ class ShiftClosingController extends Controller
             $request->user()->id,
         );
     }
+
+    // Kasir memperbaiki setoran yang dikembalikan, lalu mengirim ulang
+    public function resubmit(Request $request, ShiftClosing $closing)
+    {
+        $user = $request->user();
+
+        abort_unless($closing->user_id === $user->id, 403);
+
+        if ($closing->status !== 'rejected') {
+            throw ValidationException::withMessages(['status' => 'Hanya setoran yang dikembalikan yang bisa dikoreksi.']);
+        }
+
+        $data = $request->validate([
+            'opening_cash' => ['required', 'integer', 'min:0'],
+            'counted_cash' => ['required', 'integer', 'min:0'],
+            'note'         => ['nullable', 'string', 'max:200'],
+        ]);
+
+        // Penjualan dihitung ulang dari periode yang sama (transaksi bisa berubah sejak dikirim)
+        $base = fn () => Sale::where('user_id', $user->id)
+            ->whereBetween('created_at', [$closing->period_start, $closing->period_end]);
+
+        $byMethod = $base()->whereNull('voided_at')
+            ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
+            ->groupBy('payment_method')->get()
+            ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
+
+        $voided   = $base()->whereNotNull('voided_at')->selectRaw('COUNT(*) as c, COALESCE(SUM(total),0) as t')->first();
+        $expected = (int) $data['opening_cash'] + (int) ($byMethod['tunai']['total'] ?? 0);
+
+        $closing->update([
+            'opening_cash'  => $data['opening_cash'],
+            'total'         => (int) $byMethod->sum('total'),
+            'sales_count'   => (int) $byMethod->sum('count'),
+            'by_method'     => $byMethod,
+            'voided_count'  => (int) $voided->c,
+            'voided_total'  => (int) $voided->t,
+            'expected_cash' => $expected,
+            'counted_cash'  => $data['counted_cash'],
+            'difference'    => $data['counted_cash'] - $expected,
+            'note'          => $data['note'] ?? null,
+            'status'        => 'submitted',
+            'reviewed_by'   => null,
+            'reviewed_at'   => null,
+            // review_note sengaja dipertahankan sebagai riwayat; ditimpa saat owner memproses lagi
+        ]);
+
+        Notifier::toRoles(
+            ['owner'],
+            'shift',
+            'Setoran shift dikirim ulang',
+            "{$user->username} mengoreksi dan mengirim ulang setoran #{$closing->id}.",
+            "/setoran/{$closing->id}",
+            $user->id,
+        );
+
+        return redirect("/setoran/{$closing->id}");
+    }
 }

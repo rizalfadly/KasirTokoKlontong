@@ -79,7 +79,7 @@ export default function Setoran({ closings, pending }) {
                                                         (c.difference === 0 ? 'text-emerald-600' : c.difference < 0 ? 'text-red-600' : 'text-amber-600')
                                                     }
                                                 >
-                                                    {c.difference === 0 ? 'Cocok' : (c.difference > 0 ? '+' : '-') + rp(Math.abs(c.difference))}
+                                                    {c.difference === 0 ? 'Laci cocok' : (c.difference > 0 ? '+' : '-') + rp(Math.abs(c.difference))}
                                                 </td>
                                                 <td className="py-3 pl-6">
                                                     <span className={'rounded-full px-2.5 py-1 text-xs font-semibold ' + style}>{label}</span>

@@ -35,6 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/setoran', [ShiftClosingController::class, 'index']);
     Route::post('/setoran', [ShiftClosingController::class, 'store']);
     Route::get('/setoran/{closing}', [ShiftClosingController::class, 'show']);
+    Route::post('/setoran/{closing}/kirim-ulang', [ShiftClosingController::class, 'resubmit']);
     Route::post('/setoran/{closing}/setujui', [ShiftClosingController::class, 'approve']);
     Route::post('/setoran/{closing}/kembalikan', [ShiftClosingController::class, 'reject']);
 

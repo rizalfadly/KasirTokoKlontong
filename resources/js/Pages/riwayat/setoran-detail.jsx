@@ -1,6 +1,6 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { ArrowLeft, Banknote, QrCode, Landmark, ShoppingBag, Ban, CheckCircle2, Undo2, Printer } from 'lucide-react';
+import { ArrowLeft, Banknote, QrCode, Landmark, ShoppingBag, Ban, CheckCircle2, Undo2, Printer, Pencil } from 'lucide-react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num, rp } from '../../lib/format';
 
@@ -29,6 +29,24 @@ export default function SetoranDetail({ closing: c }) {
     const [label, style] = STATUS[c.status] ?? [c.status, 'bg-slate-100 text-slate-600'];
     const by = c.by_method ?? {};
     const d = c.difference;
+
+    const [editing, setEditing] = useState(false);
+    const [form, setForm] = useState({
+        opening_cash: String(c.opening_cash),
+        counted_cash: String(c.counted_cash),
+        note: c.note ?? '',
+    });
+
+    const isMine = auth?.user?.id === c.user_id;
+
+    function resubmit(e) {
+    e.preventDefault();
+    router.post(`/setoran/${c.id}/kirim-ulang`, {
+        opening_cash: Number(form.opening_cash || 0),
+        counted_cash: Number(form.counted_cash || 0),
+        note: form.note,
+    }, { preserveScroll: true, onSuccess: () => setEditing(false) });
+}
 
     function approve() {
         if (confirm('Setujui setoran shift ini?')) router.post(`/setoran/${c.id}/setujui`, {}, { preserveScroll: true });
@@ -63,6 +81,15 @@ export default function SetoranDetail({ closing: c }) {
                     >
                         <Printer className="h-4 w-4" /> Cetak
                     </button>
+                    {isMine && c.status === 'rejected' && (
+                        <button
+                            onClick={() => setEditing(true)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105"
+                        >
+                            <Pencil className="h-4 w-4" /> Koreksi &amp; kirim ulang
+                        </button>
+                    )}
+
                     {isOwner && c.status === 'submitted' && (
                         <>
                             <button
@@ -174,6 +201,63 @@ export default function SetoranDetail({ closing: c }) {
                                 Batal
                             </button>
                             <button className="flex-1 rounded-xl bg-orange-500 py-2.5 font-semibold text-white hover:bg-orange-600">Kembalikan</button>
+                        </div>
+                    </form>
+                </div>
+            )}
+            
+       {editing && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 print:hidden">
+                    <form onSubmit={resubmit} className="w-full max-w-md space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
+                        <div>
+                            <h2 className="flex items-center gap-2 text-lg font-bold">
+                                <Pencil className="h-5 w-5 text-orange-500" /> Koreksi setoran
+                            </h2>
+                            <p className="mt-1 text-sm text-orange-700">Catatan owner: {c.review_note}</p>
+                        </div>
+
+                        <label className="block text-sm font-medium text-slate-600">
+                            Modal awal laci (Rp)
+                            <input
+                                type="number"
+                                min="0"
+                                value={form.opening_cash}
+                                onChange={(e) => setForm({ ...form, opening_cash: e.target.value })}
+                                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                            />
+                        </label>
+                        <label className="block text-sm font-medium text-slate-600">
+                            Uang di laci (hitungan fisik ulang)
+                            <input
+                                type="number"
+                                min="0"
+                                value={form.counted_cash}
+                                onChange={(e) => setForm({ ...form, counted_cash: e.target.value })}
+                                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                            />
+                        </label>
+                        <label className="block text-sm font-medium text-slate-600">
+                            Catatan koreksi
+                            <textarea
+                                rows={3}
+                                value={form.note}
+                                onChange={(e) => setForm({ ...form, note: e.target.value })}
+                                placeholder="mis. Sudah dihitung ulang, ada uang kembalian Rp 5.000 terselip"
+                                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                            />
+                        </label>
+
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setEditing(false)}
+                                className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
+                            >
+                                Batal
+                            </button>
+                            <button className="flex-1 rounded-xl bg-orange-500 py-2.5 font-semibold text-white hover:bg-orange-600">
+                                Kirim ulang
+                            </button>
                         </div>
                     </form>
                 </div>
