@@ -12,6 +12,7 @@ use Inertia\Inertia;
 use Illuminate\Validation\Rule;
 use App\Services\StockService;
 use App\Services\Notifier;
+use Carbon\Carbon;
 
 class SaleController extends Controller
 {
@@ -190,6 +191,45 @@ class SaleController extends Controller
 
         return $id ? redirect("/riwayat/{$id}?print=1") : redirect('/riwayat');
     }
+
+    // rekap penjualan toko pershift
+    public function rekap(Request $request)
+        {
+            $user = $request->user();
+
+            $date = $request->query('date', today()->toDateString());
+            $from = Carbon::parse("{$date} " . $request->query('from', '00:00'))->startOfMinute();
+            $to   = Carbon::parse("{$date} " . $request->query('to', '23:59'))->endOfMinute();
+
+            $base = fn () => Sale::query()
+                ->when($user->role === 'kasir', fn ($q) => $q->where('user_id', $user->id))
+                ->whereBetween('created_at', [$from, $to]);
+
+            $byMethod = $base()->whereNull('voided_at')
+                ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
+                ->groupBy('payment_method')
+                ->get()
+                ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
+
+            $voided = $base()->whereNotNull('voided_at')
+                ->selectRaw('COUNT(*) as count, COALESCE(SUM(total),0) as total')->first();
+
+            $perKasir = $user->role === 'kasir' ? [] : $base()->whereNull('voided_at')
+                ->selectRaw('user_id, COUNT(*) as count, SUM(total) as total')
+                ->groupBy('user_id')->with('user:id,username')->get()
+                ->map(fn ($r) => ['username' => $r->user?->username ?? '-', 'count' => (int) $r->count, 'total' => (int) $r->total])
+                ->values();
+
+            return Inertia::render('riwayat/rekap', [
+                'filters'  => ['date' => $date, 'from' => $from->format('H:i'), 'to' => $to->format('H:i')],
+                'byMethod' => $byMethod,
+                'total'    => (int) $byMethod->sum('total'),
+                'count'    => (int) $byMethod->sum('count'),
+                'voided'   => ['count' => (int) $voided->count, 'total' => (int) $voided->total],
+                'perKasir' => $perKasir,
+                'scopeLabel' => $user->role === 'kasir' ? $user->username : 'Semua kasir',
+            ]);
+        }
 
     public function void(Request $request, Sale $sale)
     {

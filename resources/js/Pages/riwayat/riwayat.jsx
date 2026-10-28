@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { Receipt, Wallet, BarChart3, Search, Printer } from 'lucide-react';
+import { Receipt, Wallet, BarChart3, Search, Printer, ClipboardList } from 'lucide-react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import Pagination from '../../Components/Pagination';
 import { num, rp } from '../../lib/format';
@@ -48,9 +48,17 @@ export default function Riwayat({ sales, filters, summary }) {
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
             <Head title="Riwayat" />
 
-            <div>
-                <h1 className="text-2xl font-bold">Riwayat Transaksi</h1>
-                <p className="text-sm text-slate-500">Daftar semua transaksi, 20 per halaman.</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h1 className="text-2xl font-bold">Riwayat Transaksi</h1>
+                    <p className="text-sm text-slate-500">Daftar semua transaksi, 20 per halaman.</p>
+                </div>
+                <Link
+                    href="/riwayat/rekap"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105"
+                >
+                    <ClipboardList className="h-4 w-4" /> Rekap shift
+                </Link>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">

@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/riwayat', [SaleController::class, 'index']);
     Route::get('/riwayat/terakhir', [SaleController::class, 'terakhir']);
+    Route::get('/riwayat/rekap', [SaleController::class, 'rekap']);
     Route::get('/riwayat/{sale}', [SaleController::class, 'show'])->whereNumber('sale');
     Route::post('/riwayat/{sale}/batal', [SaleController::class, 'void'])->whereNumber('sale');
 });
