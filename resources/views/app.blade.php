@@ -5,6 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <link rel="icon" type="image/png" href="/images/logotoko.png">
+        <link rel="apple-touch-icon" href="/images/logotoko.png">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
