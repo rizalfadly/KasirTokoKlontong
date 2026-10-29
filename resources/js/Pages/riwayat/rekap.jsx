@@ -14,7 +14,7 @@ const METHODS = [
 const inputCls =
     'rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100';
 
-export default function Rekap({ filters, byMethod, total, count, voided, perKasir, scopeLabel }) {
+export default function Rekap({ filters, byMethod, total, count, voided, perKasir, scopeLabel, canSubmit }) {
     const [f, setF] = useState(filters);
     const [modal, setModal] = useState('');
     const [fisik, setFisik] = useState('');
@@ -169,7 +169,7 @@ export default function Rekap({ filters, byMethod, total, count, voided, perKasi
                 )}
             </section>
 
-            {perKasir.length === 0 && (   // hanya kasir (bukan owner) yang mengirim
+            {canSubmit && (   // hanya kasir (bukan owner) yang mengirim
                 <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm print:hidden">
                     <input
                         value={note}

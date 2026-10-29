@@ -32,16 +32,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/riwayat/{sale}', [SaleController::class, 'show'])->whereNumber('sale');
     Route::post('/riwayat/{sale}/batal', [SaleController::class, 'void'])->whereNumber('sale');
 
-    Route::get('/setoran', [ShiftClosingController::class, 'index']);
-    Route::post('/setoran', [ShiftClosingController::class, 'store']);
-    Route::get('/setoran/{closing}', [ShiftClosingController::class, 'show']);
-    Route::post('/setoran/{closing}/kirim-ulang', [ShiftClosingController::class, 'resubmit']);
-    Route::post('/setoran/{closing}/setujui', [ShiftClosingController::class, 'approve']);
-    Route::post('/setoran/{closing}/kembalikan', [ShiftClosingController::class, 'reject']);
-
     Route::get('/notifikasi', [NotificationController::class, 'index']);
     Route::post('/notifikasi/baca-semua', [NotificationController::class, 'readAll']);
     Route::post('/notifikasi/{id}/baca', [NotificationController::class, 'read']);
+});
+
+// owner dan kasir
+// Rekap & setoran shift: hanya kasir (yang memegang laci) dan owner (yang menyetujui)
+Route::middleware(['auth', CheckRole::class . ':kasir,owner'])->group(function () {
+    Route::get('/riwayat/rekap', [SaleController::class, 'rekap']);
+    Route::get('/setoran', [ShiftClosingController::class, 'index']);
+    Route::post('/setoran', [ShiftClosingController::class, 'store']);
+    Route::get('/setoran/{closing}', [ShiftClosingController::class, 'show'])->whereNumber('closing');
+    Route::post('/setoran/{closing}/kirim-ulang', [ShiftClosingController::class, 'resubmit'])->whereNumber('closing');
+    Route::post('/setoran/{closing}/setujui', [ShiftClosingController::class, 'approve'])->whereNumber('closing');
+    Route::post('/setoran/{closing}/kembalikan', [ShiftClosingController::class, 'reject'])->whereNumber('closing');
 });
 
 // Hanya owner dan admin

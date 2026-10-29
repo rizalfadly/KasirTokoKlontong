@@ -3,6 +3,7 @@ import {
     BookOpen,
     Boxes,
     ClipboardCheck,
+    ClipboardList,
     History,
     LayoutDashboard,
     Package,
@@ -25,6 +26,7 @@ export const menu = [
         items: [
             { label: 'Kasir', href: '/kasir', icon: ShoppingCart, quick: true },
             { label: 'Riwayat', href: '/riwayat', icon: History, quick: true },
+            { label: 'Setoran Shift', href: '/setoran', icon: ClipboardList, roles: ['kasir'] },
         ],
     },
     {

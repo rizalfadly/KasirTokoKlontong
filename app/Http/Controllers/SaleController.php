@@ -201,8 +201,10 @@ class SaleController extends Controller
             $from = Carbon::parse("{$date} " . $request->query('from', '00:00'))->startOfMinute();
             $to   = Carbon::parse("{$date} " . $request->query('to', '23:59'))->endOfMinute();
 
+            $ownOnly = $user->role !== 'owner';
+
             $base = fn () => Sale::query()
-                ->when($user->role === 'kasir', fn ($q) => $q->where('user_id', $user->id))
+                ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
                 ->whereBetween('created_at', [$from, $to]);
 
             $byMethod = $base()->whereNull('voided_at')
@@ -214,7 +216,7 @@ class SaleController extends Controller
             $voided = $base()->whereNotNull('voided_at')
                 ->selectRaw('COUNT(*) as count, COALESCE(SUM(total),0) as total')->first();
 
-            $perKasir = $user->role === 'kasir' ? [] : $base()->whereNull('voided_at')
+            $perKasir = $ownOnly ? [] : $base()->whereNull('voided_at')
                 ->selectRaw('user_id, COUNT(*) as count, SUM(total) as total')
                 ->groupBy('user_id')->with('user:id,username')->get()
                 ->map(fn ($r) => ['username' => $r->user?->username ?? '-', 'count' => (int) $r->count, 'total' => (int) $r->total])
@@ -227,7 +229,9 @@ class SaleController extends Controller
                 'count'    => (int) $byMethod->sum('count'),
                 'voided'   => ['count' => (int) $voided->count, 'total' => (int) $voided->total],
                 'perKasir' => $perKasir,
-                'scopeLabel' => $user->role === 'kasir' ? $user->username : 'Semua kasir',
+                // dan di bagian return:
+                'scopeLabel' => $ownOnly ? $user->username : 'Semua kasir',
+                'canSubmit'  => $ownOnly,
             ]);
         }
 
