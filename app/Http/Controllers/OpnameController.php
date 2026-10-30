@@ -11,34 +11,75 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use App\Services\Notifier;
+use App\Support\Period;
 
 class OpnameController extends Controller
 {
     // Daftar semua sesi opname
-    public function index()
+    // public function index()
+    // {
+    //     $net = StockOpnameItem::selectRaw('stock_opname_id, SUM(difference * price) as net')
+    //         ->groupBy('stock_opname_id')
+    //         ->pluck('net', 'stock_opname_id');
+
+    //     $opnames = StockOpname::with('creator:id,username')
+    //         ->withCount('items')
+    //         ->latest('id')
+    //         ->limit(100)
+    //         ->get()
+    //         ->map(fn ($o) => [
+    //             'id'          => $o->id,
+    //             'code'        => $o->code,
+    //             'status'      => $o->status,
+    //             'sku_prefix'  => $o->sku_prefix,
+    //             'note'        => $o->note,
+    //             'creator'     => $o->creator?->username,
+    //             'items_count' => $o->items_count,
+    //             'net'         => (int) round($net[$o->id] ?? 0),
+    //             'created_at'  => $o->created_at,
+    //         ]);
+
+    //     return Inertia::render('opname/opname', ['opnames' => $opnames]);
+    // }
+
+
+    public function index(Request $request)
     {
+        $period = Period::fromRequest($request);
+        $status = (string) $request->query('status', '');
+
+        $opnames = StockOpname::query()
+            ->when($period->start !== null, fn ($q) => $period->apply($q))
+            ->when(in_array($status, ['draft', 'submitted', 'approved'], true), fn ($q) => $q->where('status', $status))
+            ->with('creator:id,username')
+            ->withCount('items')
+            ->latest('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        // Nilai selisih hanya dihitung untuk opname yang tampil di halaman ini
         $net = StockOpnameItem::selectRaw('stock_opname_id, SUM(difference * price) as net')
+            ->whereIn('stock_opname_id', $opnames->getCollection()->pluck('id'))
             ->groupBy('stock_opname_id')
             ->pluck('net', 'stock_opname_id');
 
-        $opnames = StockOpname::with('creator:id,username')
-            ->withCount('items')
-            ->latest('id')
-            ->limit(100)
-            ->get()
-            ->map(fn ($o) => [
-                'id'          => $o->id,
-                'code'        => $o->code,
-                'status'      => $o->status,
-                'sku_prefix'  => $o->sku_prefix,
-                'note'        => $o->note,
-                'creator'     => $o->creator?->username,
-                'items_count' => $o->items_count,
-                'net'         => (int) round($net[$o->id] ?? 0),
-                'created_at'  => $o->created_at,
-            ]);
+        $opnames->through(fn ($o) => [
+            'id'          => $o->id,
+            'code'        => $o->code,
+            'status'      => $o->status,
+            'sku_prefix'  => $o->sku_prefix,
+            'note'        => $o->note,
+            'creator'     => $o->creator?->username,
+            'items_count' => $o->items_count,
+            'net'         => (int) round($net[$o->id] ?? 0),
+            'created_at'  => $o->created_at,
+        ]);
 
-        return Inertia::render('opname/opname', ['opnames' => $opnames]);
+        return Inertia::render('opname/opname', [
+            'opnames' => $opnames,
+            'pending' => StockOpname::where('status', 'submitted')->count(),
+            'filters' => ['period' => $period->toArray(), 'status' => $status],
+        ]);
     }
 
     // Mulai opname baru

@@ -12,6 +12,7 @@ use Inertia\Inertia;
 use Illuminate\Validation\Rule;
 use App\Models\Supplier;
 use App\Services\Notifier;
+use App\Support\Period;
 
 class StockController extends Controller
 {
@@ -108,22 +109,24 @@ class StockController extends Controller
     // Buku stok: daftar pergerakan stok terbaru
     public function index(Request $request)
     {
+        $period = Period::fromRequest($request);
         $q = trim((string) $request->query('q', ''));
         $type = (string) $request->query('type', '');
 
         $movements = StockMovement::with(['product:id,name,sku,unit', 'user:id,username', 'supplier:id,name'])
-            ->when($type !== '', fn ($query) => $query->where('type', $type))
-            ->when($q !== '', fn ($query) => $query->whereHas(
+            ->when($period->start !== null, fn ($m) => $period->apply($m))
+            ->when($type !== '', fn ($m) => $m->where('type', $type))
+            ->when($q !== '', fn ($m) => $m->whereHas(
                 'product',
                 fn ($p) => $p->where(fn ($w) => $w->where('name', 'like', "%{$q}%")->orWhere('sku', 'like', "%{$q}%"))
             ))
             ->latest('id')
-            ->limit(300)
-            ->get();
+            ->paginate(50)
+            ->withQueryString();
 
         return Inertia::render('stok/buku', [
             'movements' => $movements,
-            'filters'   => ['q' => $q, 'type' => $type],
+            'filters'   => ['period' => $period->toArray(), 'q' => $q, 'type' => $type],
         ]);
     }
 }

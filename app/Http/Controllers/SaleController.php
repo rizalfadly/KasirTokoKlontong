@@ -13,6 +13,7 @@ use Illuminate\Validation\Rule;
 use App\Services\StockService;
 use App\Services\Notifier;
 use Carbon\Carbon;
+use App\Support\Period;
 
 class SaleController extends Controller
 {
@@ -139,10 +140,12 @@ class SaleController extends Controller
                 $user = $request->user();
                 $q = trim((string) $request->query('q', ''));
                 $onlyVoid = $request->boolean('void');
+                $period = Period::fromRequest($request);
 
                 // Aturan akses: kasir hanya melihat transaksinya sendiri
                 $scope = fn () => Sale::query()
-                    ->when($user->role === 'kasir', fn ($s) => $s->where('user_id', $user->id));
+                    ->when($user->role === 'kasir', fn ($s) => $s->where('user_id', $user->id))
+                    ->when($period->start !== null, fn ($s) => $period->apply($s));
 
                 $sales = $scope()
                     ->with(['user:id,name,username', 'voider:id,name,username'])
@@ -155,6 +158,7 @@ class SaleController extends Controller
                     })
                     ->when($onlyVoid, fn ($query) => $query->whereNotNull('voided_at'))
                     ->latest()
+                    ->latest('id')
                     ->paginate(20)
                     ->withQueryString();
 
@@ -163,7 +167,7 @@ class SaleController extends Controller
 
                 return Inertia::render('riwayat/riwayat', [
                     'sales'   => $sales,
-                    'filters' => ['q' => $q, 'void' => $onlyVoid],
+                    'filters' => ['q' => $q, 'void' => $onlyVoid, 'period' => $period->toArray(),],
                     'summary' => [
                         'count'     => $activeCount,
                         'total'     => $activeTotal,

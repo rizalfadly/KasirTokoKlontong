@@ -1,9 +1,10 @@
 import { Head, router } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
+import PeriodFilter from '../../Components/Filter/PeriodFilter';
+import Pager from '../../Components/Filter/Pager';
 import { num } from '../../lib/format';
-import { Search, BookOpen } from 'lucide-react';
-
 
 const TYPES = {
     initial: ['Saldo awal', 'bg-slate-100 text-slate-600'],
@@ -16,18 +17,14 @@ const TYPES = {
 
 export default function BukuStok({ movements, filters }) {
     const [q, setQ] = useState(filters.q ?? '');
-    const [type, setType] = useState(filters.type ?? '');
 
-    function apply(next = {}) {
-            router.get('/buku-stok', { q, type, ...next }, { preserveState: true, preserveScroll: true, replace: true });
-        }
-
-        // Cari otomatis 400 ms setelah berhenti mengetik
-        useEffect(() => {
-            if (q === (filters.q ?? '')) return;
-            const t = setTimeout(() => apply({ q }), 400);
-            return () => clearTimeout(t);
-        }, [q]);
+    function go(extra = {}) {
+        router.get(
+            '/buku-stok',
+            { mode: filters.period.mode, value: filters.period.value, q, type: filters.type, ...extra },
+            { preserveScroll: true, preserveState: true, replace: true },
+        );
+    }
 
     return (
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
@@ -35,41 +32,42 @@ export default function BukuStok({ movements, filters }) {
 
             <div>
                 <h1 className="text-2xl font-bold">Buku Stok</h1>
-                <p className="text-sm text-slate-500">Catatan semua perubahan stok (300 terakhir).</p>
+                <p className="text-sm text-slate-500">Catatan semua perubahan stok. Menampilkan: {filters.period.label}</p>
             </div>
 
             <div className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur-md">
-                <div className="mb-4 flex flex-wrap items-center gap-3">
-                    <div className="relative w-full sm:w-72">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                                className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                                placeholder="Cari nama atau SKU..."
+                <div className="mb-4 space-y-3">
+                    <PeriodFilter path="/buku-stok" period={filters.period} extra={{ q, type: filters.type }} />
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative w-full sm:w-72">
+                            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                                className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                                placeholder="Cari nama atau SKU, lalu Enter"
                                 value={q}
                                 onChange={(e) => setQ(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && go()}
                             />
+                        </div>
+                        <select
+                            value={filters.type}
+                            onChange={(e) => go({ type: e.target.value })}
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-orange-400"
+                        >
+                            <option value="">Semua jenis</option>
+                            {Object.entries(TYPES).map(([key, [label]]) => (
+                                <option key={key} value={key}>
+                                    {label}
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                    <select
-                        value={type}
-                        onChange={(e) => {
-                            setType(e.target.value);
-                            apply({ type: e.target.value });
-                        }}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400"
-                    >
-                        <option value="">Semua jenis</option>
-                        {Object.entries(TYPES).map(([key, [label]]) => (
-                            <option key={key} value={key}>
-                                {label}
-                            </option>
-                        ))}
-                    </select>
                 </div>
 
-                {movements.length === 0 ? (
+                {movements.data.length === 0 ? (
                     <div className="py-12 text-center text-slate-400">
-                        <BookOpen className="mx-auto h-10 w-10" />
-                        <p className="mt-2 text-sm">Belum ada catatan.</p>
+                        <p className="text-sm">Tidak ada catatan pada pilihan ini.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -86,15 +84,17 @@ export default function BukuStok({ movements, filters }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {movements.map((m) => {
+                                {movements.data.map((m) => {
                                     const [label, style] = TYPES[m.type] ?? [m.type, 'bg-slate-100 text-slate-600'];
                                     const unit = m.product?.unit ?? '';
+
                                     return (
                                         <tr key={m.id} className="transition hover:bg-amber-50/50">
                                             <td className="py-3 text-sm text-slate-500">
                                                 {new Date(m.created_at).toLocaleString('id-ID', {
                                                     day: 'numeric',
                                                     month: 'short',
+                                                    year: 'numeric',
                                                     hour: '2-digit',
                                                     minute: '2-digit',
                                                 })}
@@ -130,6 +130,8 @@ export default function BukuStok({ movements, filters }) {
                         </table>
                     </div>
                 )}
+
+                <Pager paginator={movements} noun="catatan" />
             </div>
         </div>
     );

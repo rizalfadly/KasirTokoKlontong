@@ -1,6 +1,7 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import KasirLayout from '../../Layouts/KasirLayout';
-import { MailCheck, Plus, Calculator } from 'lucide-react';
+import PeriodFilter from '../../Components/Filter/PeriodFilter';
+import Pager from '../../Components/Filter/Pager';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -14,14 +15,25 @@ const STATUS = {
 const inputClass =
     'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100';
 
-export default function Opname({ opnames }) {
+export default function Opname({ opnames, pending, filters }) {
     const form = useForm({ sku_prefix: '', note: '' });
-    const pending = opnames.filter((o) => o.status === 'submitted').length;
 
     function submit(e) {
         e.preventDefault();
         form.post('/opname');
     }
+
+    function setStatus(status) {
+        router.get(
+            '/opname',
+            { mode: filters.period.mode, value: filters.period.value, status },
+            { preserveScroll: true, preserveState: true, replace: true },
+        );
+    }
+
+    const chip = (active) =>
+        'rounded-full px-4 py-1.5 text-sm font-medium transition ' +
+        (active ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200');
 
     return (
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
@@ -33,18 +45,14 @@ export default function Opname({ opnames }) {
             </div>
 
             {pending > 0 && (
-                <div className="flex items-center gap-2 rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-700">
-                    <MailCheck className="h-4 w-4 shrink-0" />
-                    <span>{pending} opname menunggu persetujuan owner.</span>
+                <div className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                    {pending} opname menunggu persetujuan owner.
                 </div>
             )}
 
             {/* Mulai opname baru */}
             <form onSubmit={submit} className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur-md">
-                <h2 className="mb-4 flex items-center gap-2 font-semibold">
-                    <Plus className="h-5 w-5 text-orange-500" />
-                    Mulai opname baru
-                </h2>
+                <h2 className="mb-4 font-semibold">Mulai opname baru</h2>
                 <div className="grid gap-4 md:grid-cols-3">
                     <label className="block">
                         <span className="mb-1 block text-sm font-medium text-slate-600">Cakupan (awalan SKU)</span>
@@ -82,12 +90,29 @@ export default function Opname({ opnames }) {
 
             {/* Daftar */}
             <div className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur-md">
-                <h2 className="mb-4 font-semibold">Riwayat opname</h2>
+                <div className="mb-4 space-y-3">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <h2 className="font-semibold">Riwayat opname</h2>
+                        <span className="text-sm text-slate-500">Menampilkan: {filters.period.label}</span>
+                    </div>
 
-                {opnames.length === 0 ? (
+                    <PeriodFilter path="/opname" period={filters.period} extra={{ status: filters.status }} />
+
+                    <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setStatus('')} className={chip(!filters.status)}>
+                            Semua
+                        </button>
+                        {Object.entries(STATUS).map(([key, [label]]) => (
+                            <button key={key} type="button" onClick={() => setStatus(key)} className={chip(filters.status === key)}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {opnames.data.length === 0 ? (
                     <div className="py-12 text-center text-slate-400">
-                        <Calculator className="mx-auto h-10 w-10" />
-                        <p className="mt-2 text-sm">Belum ada opname.</p>
+                        <p className="text-sm">Tidak ada opname pada pilihan ini.</p>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -105,8 +130,9 @@ export default function Opname({ opnames }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-50">
-                                {opnames.map((o) => {
+                                {opnames.data.map((o) => {
                                     const [label, style] = STATUS[o.status] ?? [o.status, 'bg-slate-100 text-slate-600'];
+
                                     return (
                                         <tr key={o.id} className="transition hover:bg-amber-50/50">
                                             <td className="py-3 font-mono text-sm font-medium">{o.code}</td>
@@ -147,6 +173,8 @@ export default function Opname({ opnames }) {
                         </table>
                     </div>
                 )}
+
+                <Pager paginator={opnames} noun="opname" />
             </div>
         </div>
     );

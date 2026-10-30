@@ -1,13 +1,14 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { Receipt, Wallet, BarChart3, Search, Printer, ClipboardList } from 'lucide-react';
+import { Receipt, Wallet, BarChart3, Search, Printer } from 'lucide-react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import Pagination from '../../Components/Pagination';
+import PeriodFilter from '../../Components/Filter/PeriodFilter';
 import { num, rp } from '../../lib/format';
 
 function Stat({ icon: Icon, label, value, bg, iconClass = 'text-slate-700' }) {
     return (
-        <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-4 rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur-md">
             <div className={'flex h-12 w-12 items-center justify-center rounded-xl ' + bg}>
                 <Icon className={'h-6 w-6 ' + iconClass} />
             </div>
@@ -26,15 +27,20 @@ export default function Riwayat({ sales, filters, summary }) {
     const [search, setSearch] = useState(filters.q ?? '');
     const onlyVoid = filters.void;
     const rows = sales.data;
-    const { auth } = usePage().props;
-    const canRekap = ['kasir', 'owner'].includes(auth?.user?.role);
 
-    //console.log(sales);
+    // Aman walaupun server belum mengirim periode
+    const period = filters.period ?? { mode: 'terbaru', value: '', label: 'Terbaru' };
 
     function apply(next = {}) {
         router.get(
             '/riwayat',
-            { q: search || undefined, void: onlyVoid ? 1 : undefined, ...next },
+            {
+                mode: period.mode,
+                value: period.value || undefined,
+                q: search || undefined,
+                void: onlyVoid ? 1 : undefined,
+                ...next,
+            },
             { preserveState: true, preserveScroll: true, replace: true },
         );
     }
@@ -50,11 +56,9 @@ export default function Riwayat({ sales, filters, summary }) {
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
             <Head title="Riwayat" />
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h1 className="text-2xl font-bold">Riwayat Transaksi</h1>
-                    <p className="text-sm text-slate-500">Daftar semua transaksi, 20 per halaman.</p>
-                </div>
+            <div>
+                <h1 className="text-2xl font-bold">Riwayat Transaksi</h1>
+                <p className="text-sm text-slate-500">Menampilkan: {period.label} · 20 per halaman</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
@@ -63,10 +67,25 @@ export default function Riwayat({ sales, filters, summary }) {
                 <Stat icon={BarChart3} label="Rata-rata per transaksi" value={rp(summary.average)} bg="bg-amber-100" iconClass="text-amber-700" />
             </div>
 
-            <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <h2 className="font-semibold">Daftar transaksi</h2>
-                    <div className="flex gap-2">
+            <div className="rounded-2xl border border-white/70 bg-white/75 p-5 shadow-sm backdrop-blur-md">
+                <div className="mb-4 space-y-3">
+                    {/* Pilihan periode: Terbaru / Harian / Bulanan / Tahunan */}
+                    <PeriodFilter
+                        path="/riwayat"
+                        period={period}
+                        extra={{ q: search || undefined, void: onlyVoid ? 1 : undefined }}
+                    />
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative w-full sm:w-64">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                            <input
+                                className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                                placeholder="Cari invoice atau kasir..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
                         <button
                             onClick={() => apply({ void: undefined })}
                             className={
@@ -86,22 +105,15 @@ export default function Riwayat({ sales, filters, summary }) {
                             Dibatalkan ({num(summary.voidCount)})
                         </button>
                     </div>
-                    <div className="relative w-full sm:w-64">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input
-                            className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-4 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                            placeholder="Cari invoice atau kasir..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
                 </div>
 
                 {rows.length === 0 ? (
                     <div className="py-12 text-center text-slate-400">
                         <Receipt className="mx-auto h-10 w-10" />
                         <p className="mt-2 text-sm">
-                            {search || onlyVoid ? 'Transaksi tidak ditemukan.' : 'Belum ada transaksi.'}
+                            {search || onlyVoid || period.mode !== 'terbaru'
+                                ? 'Tidak ada transaksi pada pilihan ini.'
+                                : 'Belum ada transaksi.'}
                         </p>
                     </div>
                 ) : (
