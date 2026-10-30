@@ -101,6 +101,9 @@ export default function Laporan({ type, value, label, summary, chart, topProduct
         if (type === 'tahunan') go('bulanan', `${value}-${String(c.i + 1).padStart(2, '0')}`);
     }
 
+    const pf = summary.profit;
+    const marginPct = pf && pf.revenue > 0 ? Math.round((pf.profit / pf.revenue) * 1000) / 10 : 0;
+
     return (
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
             <Head title="Laporan" />
@@ -186,6 +189,31 @@ export default function Laporan({ type, value, label, summary, chart, topProduct
                 <Stat icon={Egg}       label="Item terjual"          value={num(summary.items)}  bg="bg-amber-100"   iconClass="text-amber-700" />
                 <Stat icon={BarChart3} label="Rata-rata / transaksi" value={rp(summary.average)} bg="bg-violet-100"  iconClass="text-violet-700" />
             </div>
+            {pf && (
+                <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur-md">
+                        <div className="text-sm text-slate-500">Laba kotor</div>
+                        <div className={'mt-1 text-xl font-bold ' + (pf.profit < 0 ? 'text-red-600' : 'text-emerald-700')}>
+                            {rp(pf.profit)}
+                        </div>
+                        <div className="text-xs text-slate-400">
+                            penjualan {rp(pf.revenue)} − modal {rp(pf.cogs)}
+                        </div>
+                    </div>
+                    <div className="rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur-md">
+                        <div className="text-sm text-slate-500">Margin</div>
+                        <div className="mt-1 text-xl font-bold">{marginPct}%</div>
+                        <div className="text-xs text-slate-400">dari penjualan yang punya data modal</div>
+                    </div>
+                    <div className="rounded-2xl border border-white/70 bg-white/75 p-4 shadow-sm backdrop-blur-md">
+                        <div className="text-sm text-slate-500">Kelengkapan data modal</div>
+                        <div className={'mt-1 text-xl font-bold ' + (pf.coverage !== null && pf.coverage < 100 ? 'text-orange-600' : '')}>
+                            {pf.coverage === null ? '-' : `${pf.coverage}%`}
+                        </div>
+                        <div className="text-xs text-slate-400">penjualan periode ini yang sudah punya harga beli</div>
+                    </div>
+                </div>
+            )}
             {summary.voidedCount > 0 && (
                 <div className="flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -237,6 +265,7 @@ export default function Laporan({ type, value, label, summary, chart, topProduct
                                     </span>
                                     <span className="whitespace-nowrap text-slate-500">
                                         {num(p.qty)} {p.unit} · <b className="text-slate-800">{rp(p.revenue)}</b>
+                                        {p.profit != null && <span className="text-emerald-700"> · laba {rp(p.profit)}</span>}
                                     </span>
                                 </div>
                                 <div className="h-2 overflow-hidden rounded-full bg-slate-100">

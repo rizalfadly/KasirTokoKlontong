@@ -15,7 +15,9 @@ class Product extends Model
     // Satuan yang boleh berpecahan (1,5 kilo). Satuan lain harus bulat.
     public const DECIMAL_UNITS = ['kilo', 'liter'];
 
-    protected $fillable = ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon'];
+    protected $fillable = ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon', 'cost_price'];
+    protected $hidden = ['cost_price'];
+    
 
     protected $casts = [
         'stock' => 'float',

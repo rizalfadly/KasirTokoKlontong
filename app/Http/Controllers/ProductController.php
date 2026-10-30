@@ -19,8 +19,15 @@ class ProductController extends Controller
     {
         $isOwner = $request->user()->role === 'owner';
 
+        $products = Product::orderBy('name')->get();
+
+        if ($isOwner) {
+            $products->each->makeVisible('cost_price');
+        }
+
         return Inertia::render('produk/produk', [
-            'products'       => Product::orderBy('name')->get(),
+            //'products'       => Product::orderBy('name')->get(),
+            'products'       => $products,
             'units'          => Product::UNITS,
             'decimalUnits'   => Product::DECIMAL_UNITS,
             'suppliers'      => Supplier::where('is_active', true)->orderBy('name')->get(['id', 'name', 'type']),
@@ -36,7 +43,15 @@ class ProductController extends Controller
         // SKU dikosongkan -> dibuat otomatis
         //$data['sku'] = $data['sku'] ?? Product::generateSku();
 
-        $product = Product::create(Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']));
+        $only = ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon'];
+
+        // Harga beli hanya boleh diisi owner
+        if ($request->user()->role === 'owner') {
+            $only[] = 'cost_price';
+        }
+
+        //$product = Product::create(Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']));
+        $product = Product::create(Arr::only($data, $only));
         StockService::initial($product, $request->user()->id);
         $this->saveImage($product, $data);
 
@@ -49,6 +64,10 @@ class ProductController extends Controller
 
         //$fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']);
         $fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'unit', 'icon']);
+
+        if ($request->user()->role === 'owner') {
+            $fields['cost_price'] = $data['cost_price'] ?? null;
+        }
 
         $product->update($fields);
         $this->saveImage($product, $data);
@@ -112,6 +131,7 @@ class ProductController extends Controller
         ]);
 
         $data = $request->validate([
+            'cost_price' => ['nullable', 'integer', 'min:0', 'max:999999999'],
             'name'         => ['required', 'string', 'max:100'],
             'sku'          => [
                 'required', 'string', 'max:40', 'regex:/^[A-Za-z0-9._-]+$/',

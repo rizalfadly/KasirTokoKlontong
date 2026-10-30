@@ -87,6 +87,7 @@ class SaleController extends Controller
                     'product_id' => $product->id,
                     'qty'        => $qty,
                     'price'      => $product->price,
+                    'cost_price' => $product->cost_price,
                     'subtotal'   => $subtotal,
                 ];
 

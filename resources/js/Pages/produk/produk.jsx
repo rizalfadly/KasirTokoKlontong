@@ -4,6 +4,7 @@ import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import ProductImageField from '../../Components/ProductImageField';
 import { Plus, Search, Package, PackagePlus, Pencil, Trash2 } from 'lucide-react';
+import MarginHint from '../../Components/MarginHint';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -59,8 +60,8 @@ export default function ProdukIndex({
     const isOwner = auth?.user?.role === 'owner';
     const [stockFor, setStockFor] = useState(null);
 
-    const addForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
-    const editForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', unit: 'pcs', icon: '', image: '', remove_image: false });
+    const addForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', cost_price: '', unit: 'pcs', icon: '', image: '', remove_image: false });
+    const editForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', cost_price: '', unit: 'pcs', icon: '', image: '', remove_image: false });
 
     const q = search.trim().toLowerCase();
     const filtered = products.filter(
@@ -87,6 +88,7 @@ export default function ProdukIndex({
             sku: p.sku ?? '',
             barcode: p.barcode ?? '',
             remove_image: false,
+            cost_price: p.cost_price ?? '',
         });
         setEditing(p);
     }
@@ -147,7 +149,27 @@ export default function ProdukIndex({
                             onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
                             error={addForm.errors.barcode}
                         />
+
                     </div>
+
+                    {isOwner && (
+                        <div className="mt-4 grid gap-4 md:grid-cols-2">
+                            <Field
+                                label="Harga beli / modal (opsional)"
+                                type="number"
+                                min="0"
+                                placeholder="mis. 25000"
+                                value={addForm.data.cost_price}
+                                onChange={(e) => addForm.setData('cost_price', e.target.value)}
+                                error={addForm.errors.cost_price}
+                                hint="Hanya terlihat oleh owner. Terisi otomatis dari Stok masuk."
+                            />
+                            <div className="flex items-end">
+                                <MarginHint price={addForm.data.price} cost={addForm.data.cost_price} />
+                            </div>
+                        </div>
+                    )}
+
                     <Field
                         label="Harga per satuan (Rp)"
                         type="number"
@@ -210,6 +232,7 @@ export default function ProdukIndex({
                                 <tr className="border-b border-slate-100 text-sm text-slate-400">
                                     <th className="pb-3 font-medium">Produk</th>
                                     <th className="pb-3 font-medium">Harga</th>
+                                    {isOwner && <th className="pb-3 font-medium">Margin</th>}
                                     <th className="pb-3 font-medium">Stok</th>
                                     <th className="pb-3 font-medium">Status</th>
                                     <th className="pb-3"></th>
@@ -228,6 +251,21 @@ export default function ProdukIndex({
                                             {rp(p.price)}
                                             <span className="text-xs font-normal text-slate-400"> / {p.unit}</span>
                                         </td>
+                                        {isOwner && (
+                                            <td className="py-3 text-sm">
+                                                {p.cost_price == null ? (
+                                                    <span className="text-slate-300">Belum diisi</span>
+                                                ) : (
+                                                    <span className={'font-semibold ' + (p.price - p.cost_price < 0 ? 'text-red-600' : 'text-emerald-700')}>
+                                                        {rp(p.price - p.cost_price)}{' '}
+                                                        <span className="text-xs font-normal text-slate-400">
+                                                            ({p.price > 0 ? Math.round(((p.price - p.cost_price) / p.price) * 1000) / 10 : 0}%)
+                                                        </span>
+                                                    </span>
+                                                )}
+                                                <div className="text-xs text-slate-400">modal {p.cost_price == null ? '-' : rp(p.cost_price)}</div>
+                                            </td>
+                                        )}
                                         <td className="py-3">
                                             {p.stock} <span className="text-sm text-slate-500">{p.unit}</span>
                                         </td>
@@ -293,6 +331,24 @@ export default function ProdukIndex({
                                 error={editForm.errors.barcode}
                             />
                         </div>
+
+                        {isOwner && (
+                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                                <Field
+                                    label="Harga beli / modal (opsional)"
+                                    type="number"
+                                    min="0"
+                                    placeholder="mis. 25000"
+                                    value={editForm.data.cost_price}
+                                    onChange={(e) => editForm.setData('cost_price', e.target.value)}
+                                    error={editForm.errors.cost_price}
+                                    hint="Hanya terlihat oleh owner. Terisi otomatis dari Stok masuk."
+                                />
+                                <div className="flex items-end">
+                                    <MarginHint price={editForm.data.price} cost={editForm.data.cost_price} />
+                                </div>
+                            </div>
+                        )}
                         <div className="grid grid-cols-3 gap-4">
                             <Field
                                 label="Harga (Rp)"

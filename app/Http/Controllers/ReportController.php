@@ -101,6 +101,25 @@ class ReportController extends Controller
         $total = (int) $sales->sum('total');
         $count = $sales->count();
 
+        // Laba kotor hanya untuk owner, dihitung dari baris yang punya salinan modal
+        $isOwner = $request->user()->role === 'owner';
+        $profit = null;
+
+        if ($isOwner) {
+            $row = SaleItem::active()
+                ->whereBetween('created_at', [$p['start'], $p['end']])
+                ->selectRaw('product_id, SUM(qty) as qty, SUM(subtotal) as revenue,
+                    SUM(CASE WHEN cost_price IS NOT NULL THEN subtotal - ROUND(cost_price * qty) END) as profit')
+                ->first();
+
+            $profit = [
+                'revenue'  => (int) $row->costed_revenue,
+                'cogs'     => (int) $row->cogs,
+                'profit'   => (int) $row->costed_revenue - (int) $row->cogs,
+                'coverage' => $row->revenue > 0 ? (int) round($row->costed_revenue / $row->revenue * 100) : null,
+            ];
+        }
+
         // $perKasir = $sales->groupBy('user_id')->map(fn ($g) => [
         //     'username' => $g->first()->user?->username ?? '-',
         //     'count'    => $g->count(),
@@ -129,6 +148,7 @@ class ReportController extends Controller
                 'unit'    => $i->product?->unit ?? '',
                 'qty'     => (float) $i->qty,
                 'revenue' => (int) $i->revenue,
+                'profit' => $isOwner && $i->profit !== null ? (int) round($i->profit) : null,
             ]);
 
         return Inertia::render('laporan/laporan', [
@@ -138,6 +158,7 @@ class ReportController extends Controller
             'summary' => [
                 'total'     => $total,
                 'count'     => $count,
+                'profit'    => $profit,
                 'items'     => (float) SaleItem::active()->whereBetween('created_at', [$p['start'], $p['end']])->sum('qty'),
                 'average'   => $count ? (int) round($total / $count) : 0,
                 'prevTotal' => (int) Sale::active()->whereBetween('created_at', [$p['prevStart'], $p['prevEnd']])->sum('total'),

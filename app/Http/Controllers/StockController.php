@@ -73,6 +73,11 @@ class StockController extends Controller
                 $unitCost,
             );
 
+            // Harga beli terakhir menjadi modal produk
+                if ($data['mode'] === 'masuk' && $unitCost !== null && $unitCost > 0) {
+                    Product::whereKey($locked->id)->update(['cost_price' => $unitCost]);
+                }
+                
             return $delta;
         });
 
