@@ -108,8 +108,11 @@ class ReportController extends Controller
         if ($isOwner) {
             $row = SaleItem::active()
                 ->whereBetween('created_at', [$p['start'], $p['end']])
-                ->selectRaw('product_id, SUM(qty) as qty, SUM(subtotal) as revenue,
-                    SUM(CASE WHEN cost_price IS NOT NULL THEN subtotal - ROUND(cost_price * qty) END) as profit')
+                ->selectRaw('
+                    COALESCE(SUM(subtotal), 0) as revenue,
+                    COALESCE(SUM(CASE WHEN cost_price IS NOT NULL THEN subtotal END), 0) as costed_revenue,
+                    COALESCE(SUM(CASE WHEN cost_price IS NOT NULL THEN ROUND(cost_price * qty) END), 0) as cogs
+                ')
                 ->first();
 
             $profit = [
@@ -119,12 +122,6 @@ class ReportController extends Controller
                 'coverage' => $row->revenue > 0 ? (int) round($row->costed_revenue / $row->revenue * 100) : null,
             ];
         }
-
-        // $perKasir = $sales->groupBy('user_id')->map(fn ($g) => [
-        //     'username' => $g->first()->user?->username ?? '-',
-        //     'count'    => $g->count(),
-        //     'total'    => (int) $g->sum('total'),
-        // ])->sortByDesc('total')->values();
 
         $sales->loadMissing('user:id,name');
         $perKasir = $sales->groupBy('user_id')->map(function ($g) {
@@ -136,7 +133,13 @@ class ReportController extends Controller
             ];
         })->sortByDesc('total')->values();
 
-        $topProducts = SaleItem::active()->selectRaw('product_id, SUM(qty) as qty, SUM(subtotal) as revenue')
+        $topProducts = SaleItem::active()
+            ->selectRaw('
+                product_id,
+                SUM(qty) as qty,
+                SUM(subtotal) as revenue,
+                SUM(CASE WHEN cost_price IS NOT NULL THEN subtotal - ROUND(cost_price * qty) END) as profit
+            ')
             ->whereBetween('created_at', [$p['start'], $p['end']])
             ->groupBy('product_id')
             ->orderByDesc('revenue')
@@ -148,8 +151,8 @@ class ReportController extends Controller
                 'unit'    => $i->product?->unit ?? '',
                 'qty'     => (float) $i->qty,
                 'revenue' => (int) $i->revenue,
-                'profit' => $isOwner && $i->profit !== null ? (int) round($i->profit) : null,
-            ]);
+                'profit'  => $isOwner && $i->profit !== null ? (int) round($i->profit) : null,
+         ]);
 
         return Inertia::render('laporan/laporan', [
             'type'    => $type,
