@@ -300,99 +300,113 @@ export default function ProdukIndex({
                 )}
             </div>
 
-            {/* Pop-up edit */}
-            {editing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <form onSubmit={submitEdit} className="w-full max-w-lg space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
-                        <h2 className="flex items-center gap-2 text-lg font-bold">
-                            <Pencil className="h-5 w-5 text-orange-500" />
-                            Edit produk
-                        </h2>
-                        <ProductImageField form={editForm} existingUrl={editing.image_url} />
-                        <Field
-                            label="Nama produk"
-                            value={editForm.data.name}
-                            onChange={(e) => editForm.setData('name', e.target.value)}
-                            error={editForm.errors.name}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                            <Field
-                                label="SKU"
-                                autoCapitalize="characters"
-                                value={editForm.data.sku}
-                                onChange={(e) => editForm.setData('sku', e.target.value)}
-                                error={editForm.errors.sku}
-                            />
-                            <Field
-                                label="Barcode"
-                                value={editForm.data.barcode}
-                                onChange={(e) => editForm.setData('barcode', e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
-                                error={editForm.errors.barcode}
-                            />
-                        </div>
+            
+           {/* Pop-up edit */}
+                {editing && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                        <form
+                            onSubmit={submitEdit}
+                            className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-3xl bg-white shadow-2xl"
+                        >
+                            {/* Judul tetap di atas */}
+                            <div className="px-6 pt-6">
+                                <h2 className="flex items-center gap-2 text-lg font-bold">
+                                    <Pencil className="h-5 w-5 text-orange-500" />
+                                    Edit produk
+                                </h2>
+                            </div>
 
-                        {isOwner && (
-                            <div className="mt-4 grid gap-4 md:grid-cols-2">
+                            {/* Isi: bagian ini yang di-scroll */}
+                            <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+                                <ProductImageField form={editForm} existingUrl={editing.image_url} />
                                 <Field
-                                    label="Harga beli / modal (opsional)"
-                                    type="number"
-                                    min="0"
-                                    placeholder="mis. 25000"
-                                    value={editForm.data.cost_price}
-                                    onChange={(e) => editForm.setData('cost_price', e.target.value)}
-                                    error={editForm.errors.cost_price}
-                                    hint="Hanya terlihat oleh owner. Terisi otomatis dari Stok masuk."
+                                    label="Nama produk"
+                                    value={editForm.data.name}
+                                    onChange={(e) => editForm.setData('name', e.target.value)}
+                                    error={editForm.errors.name}
                                 />
-                                <div className="flex items-end">
-                                    <MarginHint price={editForm.data.price} cost={editForm.data.cost_price} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Field
+                                        label="SKU"
+                                        autoCapitalize="characters"
+                                        value={editForm.data.sku}
+                                        onChange={(e) => editForm.setData('sku', e.target.value)}
+                                        error={editForm.errors.sku}
+                                    />
+                                    <Field
+                                        label="Barcode"
+                                        value={editForm.data.barcode}
+                                        onChange={(e) => editForm.setData('barcode', e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
+                                        error={editForm.errors.barcode}
+                                    />
+                                </div>
+
+                                {isOwner && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <Field
+                                            label="Harga beli / modal (opsional)"
+                                            type="number"
+                                            min="0"
+                                            placeholder="mis. 25000"
+                                            value={editForm.data.cost_price}
+                                            onChange={(e) => editForm.setData('cost_price', e.target.value)}
+                                            error={editForm.errors.cost_price}
+                                            hint="Hanya terlihat oleh owner. Terisi otomatis dari Stok masuk."
+                                        />
+                                        <div className="flex items-start pt-7">
+                                            <MarginHint price={editForm.data.price} cost={editForm.data.cost_price} />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-3 gap-4">
+                                    <Field
+                                        label="Harga (Rp)"
+                                        type="number"
+                                        value={editForm.data.price}
+                                        onChange={(e) => editForm.setData('price', e.target.value)}
+                                        error={editForm.errors.price}
+                                    />
+                                    <Field
+                                        label="Stok"
+                                        disabled
+                                        hint="Ubah stok lewat tombol Stok di daftar produk."
+                                        type="number"
+                                        step={decimalUnits.includes(editForm.data.unit) ? '0.001' : '1'}
+                                        min="0"
+                                        value={editForm.data.stock}
+                                        onChange={(e) => editForm.setData('stock', e.target.value)}
+                                        error={editForm.errors.stock}
+                                    />
+                                    <UnitSelect
+                                        units={units}
+                                        value={editForm.data.unit}
+                                        onChange={(e) => editForm.setData('unit', e.target.value)}
+                                        error={editForm.errors.unit}
+                                    />
                                 </div>
                             </div>
-                        )}
-                        <div className="grid grid-cols-3 gap-4">
-                            <Field
-                                label="Harga (Rp)"
-                                type="number"
-                                value={editForm.data.price}
-                                onChange={(e) => editForm.setData('price', e.target.value)}
-                                error={editForm.errors.price}
-                            />
-                            <Field
-                                label="Stok"
-                                disabled
-                                hint="Ubah stok lewat tombol Stok di daftar produk."
-                                type="number"
-                                step={decimalUnits.includes(editForm.data.unit) ? '0.001' : '1'}
-                                min="0"
-                                value={editForm.data.stock}
-                                onChange={(e) => editForm.setData('stock', e.target.value)}
-                                error={editForm.errors.stock}
-                            />
-                            <UnitSelect
-                                units={units}
-                                value={editForm.data.unit}
-                                onChange={(e) => editForm.setData('unit', e.target.value)}
-                                error={editForm.errors.unit}
-                            />
-                        </div>
-                        <div className="flex gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={() => setEditing(null)}
-                                className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                disabled={editForm.processing}
-                                className="flex-1 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-2.5 font-semibold text-white disabled:opacity-50"
-                            >
-                                Simpan
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            )}
+
+                            {/* Tombol tetap di bawah */}
+                            <div className="flex gap-3 border-t border-slate-100 px-6 py-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditing(null)}
+                                    className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    disabled={editForm.processing}
+                                    className="flex-1 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-2.5 font-semibold text-white disabled:opacity-50"
+                                >
+                                    Simpan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
 
             {stockFor && (
               <StockModal
