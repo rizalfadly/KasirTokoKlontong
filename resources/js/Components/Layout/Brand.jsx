@@ -2,7 +2,7 @@ import { usePage } from '@inertiajs/react';
 
 export default function Brand() {
     const { store } = usePage().props;
-    const name = store?.name || 'Brian Berkah Telur';
+    const name = store?.name || 'Brian jaya Telur';
     const logo = store?.logo_url || '/images/logotoko.png';
 
     return (
@@ -16,4 +16,3 @@ export default function Brand() {
         </div>
     );
 }
-
