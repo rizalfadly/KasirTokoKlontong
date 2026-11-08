@@ -7,12 +7,13 @@ use App\Models\ShiftClosing;
 use App\Services\Notifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ShiftClosingController extends Controller
 {
-    // Daftar setoran: kasir melihat miliknya, owner melihat semua
+    // Daftar setoran: pengirim melihat miliknya, owner melihat semua
     public function index(Request $request)
     {
         $user = $request->user();
@@ -29,12 +30,47 @@ class ShiftClosingController extends Controller
         ]);
     }
 
-    // Kasir mengirim rekap. Angka DIHITUNG ULANG di server, bukan dipercaya dari browser.
+    // Ringkasan penjualan satu periode. Dihitung di server, bukan dipercaya dari browser.
+    private function summarize(int $userId, string $kind, $from, $to): array
+    {
+        $base = fn () => Sale::where('user_id', $userId)
+            ->where('channel', $kind === 'grosir' ? '=' : '!=', 'grosir')
+            ->whereBetween('created_at', [$from, $to]);
+
+        $byMethod = $base()->whereNull('voided_at')
+            ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
+            ->groupBy('payment_method')->get()
+            ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
+
+        $byCustomer = null;
+        if ($kind === 'grosir') {
+            $byCustomer = $base()->whereNull('voided_at')
+                ->selectRaw('customer_id, COUNT(*) as count, SUM(total) as total')
+                ->groupBy('customer_id')->with('customer:id,name')->get()
+                ->map(fn ($r) => ['name' => $r->customer?->name ?? '-', 'count' => (int) $r->count, 'total' => (int) $r->total])
+                ->sortByDesc('total')->values()->all();
+        }
+
+        $voided = $base()->whereNotNull('voided_at')
+            ->selectRaw('COUNT(*) as c, COALESCE(SUM(total),0) as t')->first();
+
+        return [
+            'by_method'    => $byMethod,
+            'by_customer'  => $byCustomer,
+            'count'        => (int) $byMethod->sum('count'),
+            'total'        => (int) $byMethod->sum('total'),
+            'tunai'        => (int) ($byMethod['tunai']['total'] ?? 0),
+            'voided_count' => (int) $voided->c,
+            'voided_total' => (int) $voided->t,
+        ];
+    }
+
     public function store(Request $request)
     {
         $user = $request->user();
 
         $data = $request->validate([
+            'kind'         => ['required', Rule::in(['toko', 'grosir'])],
             'date'         => ['required', 'date'],
             'from'         => ['required', 'date_format:H:i'],
             'to'           => ['required', 'date_format:H:i'],
@@ -43,51 +79,49 @@ class ShiftClosingController extends Controller
             'note'         => ['nullable', 'string', 'max:200'],
         ]);
 
+        // Hak akses per jenis
+        abort_unless(
+            ($data['kind'] === 'grosir' && in_array($user->role, ['admin', 'owner']))
+            || ($data['kind'] === 'toko' && in_array($user->role, ['kasir', 'owner'])),
+            403
+        );
+
         $from = Carbon::parse("{$data['date']} {$data['from']}")->startOfMinute();
         $to   = Carbon::parse("{$data['date']} {$data['to']}")->endOfMinute();
 
-       // $base = fn () => Sale::where('user_id', $user->id)->whereBetween('created_at', [$from, $to]);
-       $base = fn () => Sale::where('user_id', $user->id)
-            ->where('channel', '!=', 'grosir')
-            ->whereBetween('created_at', [$from, $to]);
+        $s = $this->summarize($user->id, $data['kind'], $from, $to);
 
-        $byMethod = $base()->whereNull('voided_at')
-            ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
-            ->groupBy('payment_method')->get()
-            ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
-
-        $count = (int) $byMethod->sum('count');
-
-        if ($count === 0) {
+        if ($s['count'] === 0) {
             throw ValidationException::withMessages(['status' => 'Tidak ada transaksi pada periode ini.']);
         }
 
-        // Cegah kirim dua kali untuk periode yang bertumpuk
+        // Cegah kirim dua kali untuk periode yang bertumpuk (per jenis)
         $overlap = ShiftClosing::where('user_id', $user->id)
-            ->whereIn('status', ['submitted', 'approved'])
+            ->where('kind', $data['kind'])
+            ->whereIn('status', ['submitted', 'approved', 'rejected'])
             ->where('period_start', '<=', $to)->where('period_end', '>=', $from)
             ->exists();
 
         if ($overlap) {
             throw ValidationException::withMessages([
-                'status' => 'Periode ini bertumpuk dengan setoran yang sudah dikirim atau disetujui.',
+                'status' => 'Periode ini sudah punya setoran. Buka di Setoran Shift untuk mengoreksi.',
             ]);
         }
 
-        $voided   = $base()->whereNotNull('voided_at')->selectRaw('COUNT(*) as c, COALESCE(SUM(total),0) as t')->first();
-        $tunai    = (int) ($byMethod['tunai']['total'] ?? 0);
-        $expected = (int) $data['opening_cash'] + $tunai;
+        $expected = (int) $data['opening_cash'] + $s['tunai'];
 
         $closing = ShiftClosing::create([
             'user_id'       => $user->id,
+            'kind'          => $data['kind'],
             'period_start'  => $from,
             'period_end'    => $to,
             'opening_cash'  => $data['opening_cash'],
-            'total'         => (int) $byMethod->sum('total'),
-            'sales_count'   => $count,
-            'by_method'     => $byMethod,
-            'voided_count'  => (int) $voided->c,
-            'voided_total'  => (int) $voided->t,
+            'total'         => $s['total'],
+            'sales_count'   => $s['count'],
+            'by_method'     => $s['by_method'],
+            'by_customer'   => $s['by_customer'],
+            'voided_count'  => $s['voided_count'],
+            'voided_total'  => $s['voided_total'],
             'expected_cash' => $expected,
             'counted_cash'  => $data['counted_cash'],
             'difference'    => $data['counted_cash'] - $expected,
@@ -95,11 +129,13 @@ class ShiftClosingController extends Controller
             'status'        => 'submitted',
         ]);
 
+        $label = $data['kind'] === 'grosir' ? 'grosir' : 'shift';
+
         Notifier::toRoles(
             ['owner'],
             'shift',
-            'Setoran shift menunggu persetujuan',
-            "{$user->username} mengirim rekap shift ({$count} transaksi).",
+            "Setoran {$label} menunggu persetujuan",
+            "{$user->username} mengirim rekap {$label} ({$s['count']} transaksi).",
             "/setoran/{$closing->id}",
             $user->id,
         );
@@ -122,7 +158,7 @@ class ShiftClosingController extends Controller
         abort_unless($request->user()->role === 'owner', 403);
         $data = $request->validate(['review_note' => ['nullable', 'string', 'max:200']]);
 
-        $this->review($request, $closing, 'approved', $data['review_note'] ?? null, 'Setoran shift disetujui');
+        $this->review($request, $closing, 'approved', $data['review_note'] ?? null, 'Setoran disetujui');
 
         return redirect('/setoran');
     }
@@ -132,7 +168,7 @@ class ShiftClosingController extends Controller
         abort_unless($request->user()->role === 'owner', 403);
         $data = $request->validate(['review_note' => ['required', 'string', 'min:3', 'max:200']]);
 
-        $this->review($request, $closing, 'rejected', $data['review_note'], 'Setoran shift dikembalikan');
+        $this->review($request, $closing, 'rejected', $data['review_note'], 'Setoran dikembalikan');
 
         return redirect('/setoran');
     }
@@ -160,7 +196,7 @@ class ShiftClosingController extends Controller
         );
     }
 
-    // Kasir memperbaiki setoran yang dikembalikan, lalu mengirim ulang
+    // Pengirim memperbaiki setoran yang dikembalikan, lalu mengirim ulang
     public function resubmit(Request $request, ShiftClosing $closing)
     {
         $user = $request->user();
@@ -177,28 +213,17 @@ class ShiftClosingController extends Controller
             'note'         => ['nullable', 'string', 'max:200'],
         ]);
 
-        // Penjualan dihitung ulang dari periode yang sama (transaksi bisa berubah sejak dikirim)
-        // $base = fn () => Sale::where('user_id', $user->id)
-        //     ->whereBetween('created_at', [$closing->period_start, $closing->period_end]);
-        $base = fn () => Sale::where('user_id', $user->id)
-            ->where('channel', '!=', 'grosir')
-            ->whereBetween('created_at', [$closing->period_start, $closing->period_end]);
-
-        $byMethod = $base()->whereNull('voided_at')
-            ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
-            ->groupBy('payment_method')->get()
-            ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
-
-        $voided   = $base()->whereNotNull('voided_at')->selectRaw('COUNT(*) as c, COALESCE(SUM(total),0) as t')->first();
-        $expected = (int) $data['opening_cash'] + (int) ($byMethod['tunai']['total'] ?? 0);
+        $s = $this->summarize($user->id, $closing->kind ?? 'toko', $closing->period_start, $closing->period_end);
+        $expected = (int) $data['opening_cash'] + $s['tunai'];
 
         $closing->update([
             'opening_cash'  => $data['opening_cash'],
-            'total'         => (int) $byMethod->sum('total'),
-            'sales_count'   => (int) $byMethod->sum('count'),
-            'by_method'     => $byMethod,
-            'voided_count'  => (int) $voided->c,
-            'voided_total'  => (int) $voided->t,
+            'total'         => $s['total'],
+            'sales_count'   => $s['count'],
+            'by_method'     => $s['by_method'],
+            'by_customer'   => $s['by_customer'],
+            'voided_count'  => $s['voided_count'],
+            'voided_total'  => $s['voided_total'],
             'expected_cash' => $expected,
             'counted_cash'  => $data['counted_cash'],
             'difference'    => $data['counted_cash'] - $expected,
@@ -206,13 +231,12 @@ class ShiftClosingController extends Controller
             'status'        => 'submitted',
             'reviewed_by'   => null,
             'reviewed_at'   => null,
-            // review_note sengaja dipertahankan sebagai riwayat; ditimpa saat owner memproses lagi
         ]);
 
         Notifier::toRoles(
             ['owner'],
             'shift',
-            'Setoran shift dikirim ulang',
+            'Setoran dikirim ulang',
             "{$user->username} mengoreksi dan mengirim ulang setoran #{$closing->id}.",
             "/setoran/{$closing->id}",
             $user->id,

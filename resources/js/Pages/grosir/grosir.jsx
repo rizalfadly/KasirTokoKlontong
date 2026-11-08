@@ -1,6 +1,6 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, Link } from '@inertiajs/react';
 import { useState } from 'react';
-import { UserPlus } from 'lucide-react';
+import { ClipboardList, UserPlus } from 'lucide-react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { useCart } from '../../Components/Kasir/useCart';
 import ProductGrid from '../../Components/Kasir/ProductGrid';
@@ -100,13 +100,19 @@ export default function Grosir({ products, customers, quotas = {},orders = {}, d
 
     return (
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
-            <Head title="Penjualan Grosir" />
-
-            <div>
-                <h1 className="text-2xl font-bold">Penjualan Grosir</h1>
-                <p className="text-sm text-slate-500">Harga grosir otomatis berlaku mulai batas jumlah tiap produk.</p>
+            <Head title="Penjualan Grosir" /> 
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h1 className="text-2xl font-bold">Penjualan Grosir</h1>
+                    <p className="text-sm text-slate-500">Harga grosir otomatis berlaku mulai batas jumlah tiap produk.</p>
+                </div>
+                <Link
+                    href="/grosir/rekap"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105"
+                >
+                    <ClipboardList className="h-4 w-4" /> Rekap grosir
+                </Link>
             </div>
-
             <div className="grid gap-6 lg:grid-cols-3">
                 <ProductGrid products={filtered} cart={cart} search={search} onSearch={setSearch}
                     onScan={handleScan} scanMsg={scanMsg} onAdd={add} />

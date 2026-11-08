@@ -20,16 +20,17 @@ const STATUS = {
 const fmt = (d) =>
     d ? new Date(d).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
 
+const fieldCls =
+    'mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100';
+
 export default function SetoranDetail({ closing: c }) {
     const { auth, errors } = usePage().props;
     const isOwner = auth?.user?.role === 'owner';
+    const isMine = auth?.user?.id === c.user_id;
+    const isGrosir = c.kind === 'grosir';
+
     const [returning, setReturning] = useState(false);
     const [note, setNote] = useState('');
-
-    const [label, style] = STATUS[c.status] ?? [c.status, 'bg-slate-100 text-slate-600'];
-    const by = c.by_method ?? {};
-    const d = c.difference;
-
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState({
         opening_cash: String(c.opening_cash),
@@ -37,19 +38,31 @@ export default function SetoranDetail({ closing: c }) {
         note: c.note ?? '',
     });
 
-    const isMine = auth?.user?.id === c.user_id;
+    const [label, style] = STATUS[c.status] ?? [c.status, 'bg-slate-100 text-slate-600'];
+    const by = c.by_method ?? {};
+    const customers = c.by_customer ?? [];
+    const tunai = by.tunai?.total ?? 0;
+    const showLaci = !isGrosir || tunai > 0;
+    const d = c.difference;
+
+    const jenis = isGrosir ? 'Grosir' : 'Shift';
+    const pengirim = isGrosir ? 'Admin' : 'Kasir';
 
     function resubmit(e) {
-    e.preventDefault();
-    router.post(`/setoran/${c.id}/kirim-ulang`, {
-        opening_cash: Number(form.opening_cash || 0),
-        counted_cash: Number(form.counted_cash || 0),
-        note: form.note,
-    }, { preserveScroll: true, onSuccess: () => setEditing(false) });
-}
+        e.preventDefault();
+        router.post(
+            `/setoran/${c.id}/kirim-ulang`,
+            {
+                opening_cash: showLaci ? Number(form.opening_cash || 0) : 0,
+                counted_cash: showLaci ? Number(form.counted_cash || 0) : 0,
+                note: form.note,
+            },
+            { preserveScroll: true, onSuccess: () => setEditing(false) },
+        );
+    }
 
     function approve() {
-        if (confirm('Setujui setoran shift ini?')) router.post(`/setoran/${c.id}/setujui`, {}, { preserveScroll: true });
+        if (confirm(`Setujui setoran ${jenis.toLowerCase()} ini?`)) router.post(`/setoran/${c.id}/setujui`, {}, { preserveScroll: true });
     }
 
     function giveBack(e) {
@@ -67,11 +80,14 @@ export default function SetoranDetail({ closing: c }) {
                         <ArrowLeft className="h-4 w-4" /> Semua setoran
                     </Link>
                     <h1 className="mt-1 flex flex-wrap items-center gap-3 text-2xl font-bold">
-                        Setoran Shift #{c.id}
+                        Setoran {jenis} #{c.id}
                         <span className={'rounded-full px-3 py-1 text-xs font-semibold ' + style}>{label}</span>
+                        {isGrosir && (
+                            <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">Grosir</span>
+                        )}
                     </h1>
                     <p className="mt-1 text-sm text-slate-500">
-                        Kasir {c.user?.username ?? '-'} · {fmt(c.period_start)} s/d {fmt(c.period_end)}
+                        {pengirim} {c.user?.username ?? '-'} · {fmt(c.period_start)} s/d {fmt(c.period_end)}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2 print:hidden">
@@ -89,7 +105,6 @@ export default function SetoranDetail({ closing: c }) {
                             <Pencil className="h-4 w-4" /> Koreksi &amp; kirim ulang
                         </button>
                     )}
-
                     {isOwner && c.status === 'submitted' && (
                         <>
                             <button
@@ -128,7 +143,7 @@ export default function SetoranDetail({ closing: c }) {
             )}
 
             <div className="rounded-3xl bg-gradient-to-br from-amber-400 via-orange-400 to-orange-500 p-6 text-white shadow-lg shadow-orange-200 print:border print:bg-none print:text-black print:shadow-none">
-                <div className="text-sm text-orange-50 print:text-slate-600">Total penjualan</div>
+                <div className="text-sm text-orange-50 print:text-slate-600">Total penjualan {isGrosir ? 'grosir' : ''}</div>
                 <div className="mt-1 text-4xl font-bold">{rp(c.total)}</div>
                 <div className="mt-1 text-sm text-orange-50 print:text-slate-600">{num(c.sales_count)} transaksi</div>
             </div>
@@ -153,45 +168,67 @@ export default function SetoranDetail({ closing: c }) {
                 </div>
             )}
 
-            <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h2 className="mb-3 font-semibold">Uang di laci</h2>
-                <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between"><span className="text-slate-500">Modal awal</span><span>{rp(c.opening_cash)}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500">+ Penjualan tunai</span><span>{rp(by.tunai?.total ?? 0)}</span></div>
-                    <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 font-semibold">
-                        <span>Seharusnya</span><span>{rp(c.expected_cash)}</span>
+            {isGrosir && customers.length > 0 && (
+                <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <h2 className="mb-3 font-semibold">Per pelanggan</h2>
+                    <ul className="divide-y divide-slate-100">
+                        {customers.map((x, i) => (
+                            <li key={i} className="flex items-center gap-3 py-3 text-sm">
+                                <span className="flex-1 font-medium">{x.name}</span>
+                                <span className="text-slate-400">{x.count} transaksi</span>
+                                <span className="font-semibold text-emerald-700">{rp(x.total)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
+
+            {showLaci ? (
+                <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <h2 className="mb-3 font-semibold">Uang di laci</h2>
+                    <div className="space-y-1.5 text-sm">
+                        <div className="flex justify-between"><span className="text-slate-500">Modal awal</span><span>{rp(c.opening_cash)}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">+ Penjualan tunai</span><span>{rp(tunai)}</span></div>
+                        <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 font-semibold">
+                            <span>Seharusnya</span><span>{rp(c.expected_cash)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold"><span>Hitungan fisik</span><span>{rp(c.counted_cash)}</span></div>
                     </div>
-                    <div className="flex justify-between font-semibold"><span>Hitungan fisik</span><span>{rp(c.counted_cash)}</span></div>
-                </div>
-                <div
-                    className={
-                        'mt-4 flex items-center justify-between rounded-xl px-4 py-3 font-semibold ' +
-                        (d === 0 ? 'bg-emerald-50 text-emerald-700' : d < 0 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700')
-                    }
-                >
-                    <span>{d === 0 ? 'Cocok' : d < 0 ? 'Kurang' : 'Lebih'}</span>
-                    <span>{rp(Math.abs(d))}</span>
-                </div>
-                {c.note && <p className="mt-3 text-sm text-slate-500">Catatan kasir: {c.note}</p>}
-            </section>
+                    <div
+                        className={
+                            'mt-4 flex items-center justify-between rounded-xl px-4 py-3 font-semibold ' +
+                            (d === 0 ? 'bg-emerald-50 text-emerald-700' : d < 0 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700')
+                        }
+                    >
+                        <span>{d === 0 ? 'Laci cocok' : d < 0 ? 'Kurang' : 'Lebih'}</span>
+                        <span>{rp(Math.abs(d))}</span>
+                    </div>
+                    {c.note && <p className="mt-3 text-sm text-slate-500">Catatan {pengirim.toLowerCase()}: {c.note}</p>}
+                </section>
+            ) : (
+                <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <p className="text-sm text-slate-500">Tidak ada penjualan tunai, jadi tidak ada hitungan laci.</p>
+                    {c.note && <p className="mt-3 text-sm text-slate-500">Catatan {pengirim.toLowerCase()}: {c.note}</p>}
+                </section>
+            )}
 
             {returning && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 print:hidden">
                     <form onSubmit={giveBack} className="w-full max-w-md space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
                         <div>
                             <h2 className="flex items-center gap-2 text-lg font-bold">
-                                <Undo2 className="h-5 w-5 text-orange-500" /> Kembalikan ke kasir
+                                <Undo2 className="h-5 w-5 text-orange-500" /> Kembalikan ke {pengirim.toLowerCase()}
                             </h2>
-                            <p className="mt-1 text-sm text-slate-500">Kasir bisa memperbaiki dan mengirim ulang.</p>
+                            <p className="mt-1 text-sm text-slate-500">{pengirim} bisa memperbaiki dan mengirim ulang.</p>
                         </div>
                         <label className="block">
-                            <span className="mb-1 block text-sm font-medium text-slate-600">Catatan untuk kasir</span>
+                            <span className="mb-1 block text-sm font-medium text-slate-600">Catatan untuk {pengirim.toLowerCase()}</span>
                             <textarea
                                 rows={3}
                                 autoFocus
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
-                                placeholder="mis. Selisih terlalu besar, hitung ulang laci"
+                                placeholder="mis. Selisih terlalu besar, hitung ulang"
                                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                             />
                             {errors?.review_note && <span className="mt-1 block text-xs text-red-600">{errors.review_note}</span>}
@@ -205,54 +242,44 @@ export default function SetoranDetail({ closing: c }) {
                     </form>
                 </div>
             )}
-            
-       {editing && (
+
+            {editing && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 print:hidden">
-                    <form onSubmit={resubmit} className="w-full max-w-md space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
-                        <div>
+                    <form onSubmit={resubmit} className="flex max-h-[90vh] w-full max-w-md flex-col rounded-3xl bg-white shadow-2xl">
+                        <div className="px-6 pt-6">
                             <h2 className="flex items-center gap-2 text-lg font-bold">
                                 <Pencil className="h-5 w-5 text-orange-500" /> Koreksi setoran
                             </h2>
                             <p className="mt-1 text-sm text-orange-700">Catatan owner: {c.review_note}</p>
                         </div>
 
-                        <label className="block text-sm font-medium text-slate-600">
-                            Modal awal laci (Rp)
-                            <input
-                                type="number"
-                                min="0"
-                                value={form.opening_cash}
-                                onChange={(e) => setForm({ ...form, opening_cash: e.target.value })}
-                                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                            />
-                        </label>
-                        <label className="block text-sm font-medium text-slate-600">
-                            Uang di laci (hitungan fisik ulang)
-                            <input
-                                type="number"
-                                min="0"
-                                value={form.counted_cash}
-                                onChange={(e) => setForm({ ...form, counted_cash: e.target.value })}
-                                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                            />
-                        </label>
-                        <label className="block text-sm font-medium text-slate-600">
-                            Catatan koreksi
-                            <textarea
-                                rows={3}
-                                value={form.note}
-                                onChange={(e) => setForm({ ...form, note: e.target.value })}
-                                placeholder="mis. Sudah dihitung ulang, ada uang kembalian Rp 5.000 terselip"
-                                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                            />
-                        </label>
+                        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+                            {showLaci && (
+                                <>
+                                    <label className="block text-sm font-medium text-slate-600">
+                                        Modal awal laci (Rp)
+                                        <input type="number" min="0" value={form.opening_cash}
+                                            onChange={(e) => setForm({ ...form, opening_cash: e.target.value })} className={fieldCls} />
+                                    </label>
+                                    <label className="block text-sm font-medium text-slate-600">
+                                        Uang di laci (hitungan fisik ulang)
+                                        <input type="number" min="0" value={form.counted_cash}
+                                            onChange={(e) => setForm({ ...form, counted_cash: e.target.value })} className={fieldCls} />
+                                    </label>
+                                </>
+                            )}
+                            <label className="block text-sm font-medium text-slate-600">
+                                Catatan koreksi
+                                <textarea rows={3} value={form.note}
+                                    onChange={(e) => setForm({ ...form, note: e.target.value })}
+                                    placeholder="mis. Sudah dihitung ulang, ada uang kembalian Rp 5.000 terselip"
+                                    className={fieldCls} />
+                            </label>
+                        </div>
 
-                        <div className="flex gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setEditing(false)}
-                                className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
-                            >
+                        <div className="flex gap-3 border-t border-slate-100 px-6 py-4">
+                            <button type="button" onClick={() => setEditing(false)}
+                                className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50">
                                 Batal
                             </button>
                             <button className="flex-1 rounded-xl bg-orange-500 py-2.5 font-semibold text-white hover:bg-orange-600">

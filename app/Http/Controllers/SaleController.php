@@ -26,116 +26,6 @@ class SaleController extends Controller
         ]);
     }
 
-    // public function store(Request $request)
-    // //public function product_id(Request $request)
-    // {
-    //     $data = $request->validate([
-    //         'items'              => ['required', 'array', 'min:1'],
-    //         'items.*.product_id' => ['required', Rule::exists('products', 'id')->whereNull('deleted_at')],
-    //         'items.*.qty'        => ['required', 'numeric', 'gt:0'],
-    //         'channel'            => ['required', Rule::in(array_keys(Sale::CHANNELS))],
-    //         'payment_method'     => ['nullable', Rule::in(['tunai', 'qris', 'transfer'])],
-    //         'paid'               => ['nullable', 'integer', 'min:0'],
-    //     ]);
-
-    //     // Gabungkan jika produk yang sama muncul dua kali
-    //     $items = collect($data['items'])
-    //         ->groupBy('product_id')
-    //         ->map(fn ($group, $productId) => [
-    //             'product_id' => (int) $productId,
-    //             'qty'        => round((float) $group->sum('qty'), 3),
-    //         ])
-    //         ->values();
-
-    //     DB::transaction(function () use ($items, $data, $request) {
-    //         $products = Product::whereIn('id', $items->pluck('product_id'))
-    //             ->lockForUpdate()
-    //             ->get()
-    //             ->keyBy('id');
-
-    //         $total = 0;
-    //         $rows = [];
-
-    //         foreach ($items as $item) {
-    //             $product = $products[$item['product_id']];
-    //             $qty = $item['qty'];
-
-    //             if ($qty <= 0) {
-    //                 throw ValidationException::withMessages([
-    //                     'items' => "Jumlah {$product->name} tidak valid.",
-    //                 ]);
-    //             }
-
-    //             // Satuan selain kilo/liter harus bilangan bulat
-    //             if (! in_array($product->unit, Product::DECIMAL_UNITS, true) && floor($qty) != $qty) {
-    //                 throw ValidationException::withMessages([
-    //                     'items' => "Jumlah {$product->name} harus bilangan bulat ({$product->unit}).",
-    //                 ]);
-    //             }
-
-    //             if ($product->stock < $qty) {
-    //                 $sisa = rtrim(rtrim(number_format($product->stock, 3, ',', ''), '0'), ',');
-
-    //                 throw ValidationException::withMessages([
-    //                     'items' => "Stok {$product->name} tidak cukup (sisa {$sisa} {$product->unit}).",
-    //                 ]);
-    //             }
-
-    //             $subtotal = (int) round($product->price * $qty);
-    //             $total += $subtotal;
-
-    //             $rows[] = [
-    //                 'product_id' => $product->id,
-    //                 'qty'        => $qty,
-    //                 'price'      => $product->price,
-    //                 'cost_price' => $product->cost_price,
-    //                 'subtotal'   => $subtotal,
-    //             ];
-
-    //             //$product->decrement('stock', $qty);
-    //         }
-
-    //        // Offline: kasir memilih cara bayar. Tokopedia/Shopee: selalu "marketplace".
-    //         $method = $data['channel'] === 'offline'
-    //             ? ($data['payment_method'] ?? 'tunai')
-    //             : 'marketplace';
-
-    //         // Uang tunai hanya dihitung untuk pembayaran tunai
-    //         $paid = $method === 'tunai' ? (int) ($data['paid'] ?? 0) : $total;
-
-    //         if ($paid < $total) {
-    //             throw ValidationException::withMessages([
-    //                 'paid' => 'Uang yang dibayar kurang dari total.',
-    //             ]);
-    //         }
-
-    //         $sale = Sale::create([
-    //             'invoice'        => 'INV-' . now()->format('ymdHis') . random_int(100, 999),
-    //             'user_id'        => $request->user()->id,
-    //             'channel'        => $data['channel'],
-    //             'payment_method' => $method,
-    //             'total'          => $total,
-    //             'paid'           => $paid,
-    //             'change_amount'  => $paid - $total,
-    //         ]);
-
-    //         $sale->items()->createMany($rows);
-
-    //         // Catat pengurangan stok di buku stok
-    //         foreach ($rows as $row) {
-    //             StockService::move(
-    //                 $products[$row['product_id']],
-    //                 -$row['qty'],
-    //                 'sale',
-    //                 $request->user()->id,
-    //                 null,
-    //                 $sale->id,
-    //             );
-    //         }
-    //     });
-
-    //     return back();
-    // }
     public function store(Request $request)       { return $this->process($request, false); }
     public function storeGrosir(Request $request) { return $this->process($request, true); }
 
@@ -379,51 +269,92 @@ class SaleController extends Controller
     }
 
     // rekap penjualan toko pershift
-    public function rekap(Request $request)
-        {
-            $user = $request->user();
+    // public function rekap(Request $request)
+    //     {
+    //         $user = $request->user();
 
-            $date = $request->query('date', today()->toDateString());
-            $from = Carbon::parse("{$date} " . $request->query('from', '00:00'))->startOfMinute();
-            $to   = Carbon::parse("{$date} " . $request->query('to', '23:59'))->endOfMinute();
+    //         $date = $request->query('date', today()->toDateString());
+    //         $from = Carbon::parse("{$date} " . $request->query('from', '00:00'))->startOfMinute();
+    //         $to   = Carbon::parse("{$date} " . $request->query('to', '23:59'))->endOfMinute();
 
-            $ownOnly = $user->role !== 'owner';
+    //         $ownOnly = $user->role !== 'owner';
 
-            // $base = fn () => Sale::query()
-            //     ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
-            //     ->whereBetween('created_at', [$from, $to]);
-            $base = fn () => Sale::query()
-                ->where('channel', '!=', 'grosir')
-                ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
-                ->whereBetween('created_at', [$from, $to]);
+    //         // $base = fn () => Sale::query()
+    //         //     ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
+    //         //     ->whereBetween('created_at', [$from, $to]);
+    //         $base = fn () => Sale::query()
+    //             ->where('channel', '!=', 'grosir')
+    //             ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
+    //             ->whereBetween('created_at', [$from, $to]);
 
-            $byMethod = $base()->whereNull('voided_at')
-                ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
-                ->groupBy('payment_method')
-                ->get()
-                ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
+    //         $byMethod = $base()->whereNull('voided_at')
+    //             ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
+    //             ->groupBy('payment_method')
+    //             ->get()
+    //             ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
 
-            $voided = $base()->whereNotNull('voided_at')
-                ->selectRaw('COUNT(*) as count, COALESCE(SUM(total),0) as total')->first();
+    //         $voided = $base()->whereNotNull('voided_at')
+    //             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total),0) as total')->first();
 
-            $perKasir = $ownOnly ? [] : $base()->whereNull('voided_at')
-                ->selectRaw('user_id, COUNT(*) as count, SUM(total) as total')
-                ->groupBy('user_id')->with('user:id,username')->get()
-                ->map(fn ($r) => ['username' => $r->user?->username ?? '-', 'count' => (int) $r->count, 'total' => (int) $r->total])
-                ->values();
+    //         $perKasir = $ownOnly ? [] : $base()->whereNull('voided_at')
+    //             ->selectRaw('user_id, COUNT(*) as count, SUM(total) as total')
+    //             ->groupBy('user_id')->with('user:id,username')->get()
+    //             ->map(fn ($r) => ['username' => $r->user?->username ?? '-', 'count' => (int) $r->count, 'total' => (int) $r->total])
+    //             ->values();
 
-            return Inertia::render('riwayat/rekap', [
-                'filters'  => ['date' => $date, 'from' => $from->format('H:i'), 'to' => $to->format('H:i')],
-                'byMethod' => $byMethod,
-                'total'    => (int) $byMethod->sum('total'),
-                'count'    => (int) $byMethod->sum('count'),
-                'voided'   => ['count' => (int) $voided->count, 'total' => (int) $voided->total],
-                'perKasir' => $perKasir,
-                // dan di bagian return:
-                'scopeLabel' => $ownOnly ? $user->username : 'Semua kasir',
-                'canSubmit'  => $ownOnly,
-            ]);
-        }
+    //         return Inertia::render('riwayat/rekap', [
+    //             'filters'  => ['date' => $date, 'from' => $from->format('H:i'), 'to' => $to->format('H:i')],
+    //             'byMethod' => $byMethod,
+    //             'total'    => (int) $byMethod->sum('total'),
+    //             'count'    => (int) $byMethod->sum('count'),
+    //             'voided'   => ['count' => (int) $voided->count, 'total' => (int) $voided->total],
+    //             'perKasir' => $perKasir,
+    //             // dan di bagian return:
+    //             'scopeLabel' => $ownOnly ? $user->username : 'Semua kasir',
+    //             'canSubmit'  => $ownOnly,
+    //         ]);
+    //     }
+    public function rekapGrosir(Request $request)
+    {
+        $user = $request->user();
+        $date = $request->query('date', today()->toDateString());
+        $from = Carbon::parse("{$date} " . $request->query('from', '00:00'))->startOfMinute();
+        $to   = Carbon::parse("{$date} " . $request->query('to', '23:59'))->endOfMinute();
+
+        $ownOnly = $user->role !== 'owner';
+
+        $base = fn () => Sale::query()
+            ->where('channel', 'grosir')
+            ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
+            ->whereBetween('created_at', [$from, $to]);
+
+        $byMethod = $base()->whereNull('voided_at')
+            ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
+            ->groupBy('payment_method')->get()
+            ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
+
+        $byCustomer = $base()->whereNull('voided_at')
+            ->selectRaw('customer_id, COUNT(*) as count, SUM(total) as total')
+            ->groupBy('customer_id')->with('customer:id,name')->get()
+            ->map(fn ($r) => ['name' => $r->customer?->name ?? '-', 'count' => (int) $r->count, 'total' => (int) $r->total])
+            ->sortByDesc('total')->values();
+
+        $voided = $base()->whereNotNull('voided_at')
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(total),0) as total')->first();
+
+        return Inertia::render('riwayat/rekap', [
+            'kind'       => 'grosir',
+            'filters'    => ['date' => $date, 'from' => $from->format('H:i'), 'to' => $to->format('H:i')],
+            'byMethod'   => $byMethod,
+            'byCustomer' => $byCustomer,
+            'total'      => (int) $byMethod->sum('total'),
+            'count'      => (int) $byMethod->sum('count'),
+            'voided'     => ['count' => (int) $voided->count, 'total' => (int) $voided->total],
+            'perKasir'   => [],
+            'scopeLabel' => $ownOnly ? $user->username . ' (grosir)' : 'Semua grosir',
+            'canSubmit'  => $ownOnly,
+        ]);
+    }
 
     public function void(Request $request, Sale $sale)
     {

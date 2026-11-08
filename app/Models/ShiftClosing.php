@@ -10,6 +10,7 @@ class ShiftClosing extends Model
 
     protected $casts = [
         'by_method'    => 'array',
+        'by_customer'  => 'array',
         'period_start' => 'datetime',
         'period_end'   => 'datetime',
         'reviewed_at'  => 'datetime',

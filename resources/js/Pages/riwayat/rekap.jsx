@@ -14,7 +14,19 @@ const METHODS = [
 const inputCls =
     'rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100';
 
-export default function Rekap({ filters, byMethod, total, count, voided, perKasir, scopeLabel, canSubmit }) {
+export default function Rekap({
+    kind = 'toko',
+    filters,
+    byMethod,
+    byCustomer = [],
+    total,
+    count,
+    voided,
+    perKasir = [],
+    scopeLabel,
+    canSubmit,
+}) {
+    const isGrosir = kind === 'grosir';
     const [f, setF] = useState(filters);
     const [modal, setModal] = useState('');
     const [fisik, setFisik] = useState('');
@@ -22,16 +34,25 @@ export default function Rekap({ filters, byMethod, total, count, voided, perKasi
     const [sending, setSending] = useState(false);
     const [err, setErr] = useState('');
 
+    const tunai = byMethod.tunai?.total ?? 0;
+    // Grosir tanpa penjualan tunai: tidak ada laci yang perlu dihitung
+    const showLaci = !isGrosir || tunai > 0;
+
+    const seharusnya = Number(modal || 0) + tunai;
+    const selisih = Number(fisik || 0) - seharusnya;
+    const readyToSend = !sending && count > 0 && (showLaci ? fisik !== '' : true);
+
     function kirim() {
         if (!confirm('Kirim rekap ini ke owner? Angka akan dikunci.')) return;
         router.post(
             '/setoran',
             {
+                kind,
                 date: f.date,
                 from: f.from,
                 to: f.to,
-                opening_cash: Number(modal || 0),
-                counted_cash: Number(fisik || 0),
+                opening_cash: showLaci ? Number(modal || 0) : 0,
+                counted_cash: showLaci ? Number(fisik || 0) : 0,
                 note,
             },
             {
@@ -45,24 +66,33 @@ export default function Rekap({ filters, byMethod, total, count, voided, perKasi
     function apply(next) {
         const v = { ...f, ...next };
         setF(v);
-        router.get('/riwayat/rekap', v, { preserveState: true, preserveScroll: true, replace: true });
+        router.get(isGrosir ? '/grosir/rekap' : '/riwayat/rekap', v, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
     }
 
-    const tunai = byMethod.tunai?.total ?? 0;
-    const seharusnya = Number(modal || 0) + tunai;
-    const selisih = Number(fisik || 0) - seharusnya;
+    const title = isGrosir ? 'Rekap Grosir' : 'Rekap Shift';
 
     return (
         <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
-            <Head title="Rekap Shift" />
+            <Head title={title} />
 
             <div className="flex flex-wrap items-start justify-between gap-3 print:hidden">
                 <div>
-                    <Link href="/riwayat" className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:underline">
-                        <ArrowLeft className="h-4 w-4" /> Riwayat
+                    <Link
+                        href={isGrosir ? '/grosir' : '/riwayat'}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-orange-600 hover:underline"
+                    >
+                        <ArrowLeft className="h-4 w-4" /> {isGrosir ? 'Penjualan Grosir' : 'Riwayat'}
                     </Link>
-                    <h1 className="mt-1 text-2xl font-bold">Rekap Shift</h1>
-                    <p className="text-sm text-slate-500">Total penjualan untuk serah terima shift atau tutup toko.</p>
+                    <h1 className="mt-1 text-2xl font-bold">{title}</h1>
+                    <p className="text-sm text-slate-500">
+                        {isGrosir
+                            ? 'Total penjualan grosir untuk dilaporkan ke owner.'
+                            : 'Total penjualan untuk serah terima shift atau tutup toko.'}
+                    </p>
                 </div>
                 <button
                     onClick={() => window.print()}
@@ -95,7 +125,7 @@ export default function Rekap({ filters, byMethod, total, count, voided, perKasi
 
             {/* Judul cetak */}
             <div className="hidden print:block">
-                <h1 className="text-xl font-bold">Rekap Shift</h1>
+                <h1 className="text-xl font-bold">{title}</h1>
                 <p className="text-sm">{scopeLabel} · {f.date} · {f.from} - {f.to}</p>
             </div>
 
@@ -132,55 +162,77 @@ export default function Rekap({ filters, byMethod, total, count, voided, perKasi
                 </div>
             )}
 
+            {/* Per pelanggan (grosir) */}
+            {isGrosir && byCustomer.length > 0 && (
+                <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <h2 className="mb-3 font-semibold">Per pelanggan</h2>
+                    <ul className="divide-y divide-slate-100">
+                        {byCustomer.map((c, i) => (
+                            <li key={i} className="flex items-center gap-3 py-3 text-sm">
+                                <span className="flex-1 font-medium">{c.name}</span>
+                                <span className="text-slate-400">{c.count} transaksi</span>
+                                <span className="font-semibold text-emerald-700">{rp(c.total)}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
+
             {/* Hitung laci */}
-            <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <h2 className="font-semibold">Hitung uang di laci</h2>
-                <p className="text-sm text-slate-500">Hanya penjualan tunai yang masuk laci.</p>
+            {showLaci ? (
+                <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                    <h2 className="font-semibold">Hitung uang di laci</h2>
+                    <p className="text-sm text-slate-500">Hanya penjualan tunai yang masuk laci.</p>
 
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                    <label className="block text-sm font-medium text-slate-600">
-                        Modal awal laci (Rp)
-                        <input type="number" min="0" value={modal} onChange={(e) => setModal(e.target.value)} placeholder="0" className={inputCls + ' mt-1 block w-full'} />
-                    </label>
-                    <label className="block text-sm font-medium text-slate-600">
-                        Uang di laci sekarang (hitungan fisik)
-                        <input type="number" min="0" value={fisik} onChange={(e) => setFisik(e.target.value)} placeholder="0" className={inputCls + ' mt-1 block w-full'} />
-                    </label>
-                </div>
-
-                <div className="mt-4 space-y-1.5 text-sm">
-                    <div className="flex justify-between"><span className="text-slate-500">Modal awal</span><span>{rp(Number(modal || 0))}</span></div>
-                    <div className="flex justify-between"><span className="text-slate-500">+ Penjualan tunai</span><span>{rp(tunai)}</span></div>
-                    <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 font-semibold">
-                        <span>Seharusnya ada di laci</span><span>{rp(seharusnya)}</span>
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <label className="block text-sm font-medium text-slate-600">
+                            Modal awal laci (Rp)
+                            <input type="number" min="0" value={modal} onChange={(e) => setModal(e.target.value)} placeholder="0" className={inputCls + ' mt-1 block w-full'} />
+                        </label>
+                        <label className="block text-sm font-medium text-slate-600">
+                            Uang di laci sekarang (hitungan fisik)
+                            <input type="number" min="0" value={fisik} onChange={(e) => setFisik(e.target.value)} placeholder="0" className={inputCls + ' mt-1 block w-full'} />
+                        </label>
                     </div>
-                </div>
 
-                {fisik !== '' && (
-                    <div
-                        className={
-                            'mt-4 flex items-center justify-between rounded-xl px-4 py-3 font-semibold ' +
-                            (selisih === 0 ? 'bg-emerald-50 text-emerald-700' : selisih < 0 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700')
-                        }
-                    >
-                        <span>{selisih === 0 ? 'Cocok' : selisih < 0 ? 'Kurang' : 'Lebih'}</span>
-                        <span>{selisih === 0 ? rp(0) : rp(Math.abs(selisih))}</span>
+                    <div className="mt-4 space-y-1.5 text-sm">
+                        <div className="flex justify-between"><span className="text-slate-500">Modal awal</span><span>{rp(Number(modal || 0))}</span></div>
+                        <div className="flex justify-between"><span className="text-slate-500">+ Penjualan tunai</span><span>{rp(tunai)}</span></div>
+                        <div className="flex justify-between border-t border-dashed border-slate-200 pt-1.5 font-semibold">
+                            <span>Seharusnya ada di laci</span><span>{rp(seharusnya)}</span>
+                        </div>
                     </div>
-                )}
-            </section>
 
-            {canSubmit && (   // hanya kasir (bukan owner) yang mengirim
+                    {fisik !== '' && (
+                        <div
+                            className={
+                                'mt-4 flex items-center justify-between rounded-xl px-4 py-3 font-semibold ' +
+                                (selisih === 0 ? 'bg-emerald-50 text-emerald-700' : selisih < 0 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700')
+                            }
+                        >
+                            <span>{selisih === 0 ? 'Cocok' : selisih < 0 ? 'Kurang' : 'Lebih'}</span>
+                            <span>{selisih === 0 ? rp(0) : rp(Math.abs(selisih))}</span>
+                        </div>
+                    )}
+                </section>
+            ) : (
+                <div className="rounded-xl bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                    Tidak ada penjualan tunai pada periode ini, jadi tidak perlu menghitung uang di laci.
+                </div>
+            )}
+
+            {canSubmit && (
                 <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm print:hidden">
                     <input
                         value={note}
                         onChange={(e) => setNote(e.target.value)}
-                        placeholder="Catatan untuk owner (opsional), mis. selisih karena uang kembalian"
+                        placeholder="Catatan untuk owner (opsional)"
                         className={inputCls + ' w-full'}
                     />
                     {err && <p className="mt-2 text-sm text-red-600">{err}</p>}
                     <button
                         onClick={kirim}
-                        disabled={sending || fisik === '' || count === 0}
+                        disabled={!readyToSend}
                         className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 py-3 font-bold text-white shadow-md shadow-orange-200 hover:brightness-105 disabled:opacity-40"
                     >
                         <Send className="h-5 w-5" /> {sending ? 'Mengirim...' : 'Kirim ke owner'}
@@ -188,7 +240,7 @@ export default function Rekap({ filters, byMethod, total, count, voided, perKasi
                 </section>
             )}
 
-            {/* Per kasir (owner/admin) */}
+            {/* Per kasir (owner) */}
             {perKasir.length > 0 && (
                 <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                     <h2 className="mb-3 font-semibold">Per kasir</h2>
