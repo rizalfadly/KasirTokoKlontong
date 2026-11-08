@@ -68,7 +68,7 @@ class Product extends Model
 
         return $sku;
     }
-
+    
     public function priceFor(float $qty, bool $grosir): int
     {
         if ($grosir && $this->wholesale_price !== null && $qty >= (float) $this->wholesale_min_qty) {
