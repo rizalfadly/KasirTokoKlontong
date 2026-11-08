@@ -269,51 +269,48 @@ class SaleController extends Controller
     }
 
     // rekap penjualan toko pershift
-    // public function rekap(Request $request)
-    //     {
-    //         $user = $request->user();
+    public function rekap(Request $request)
+    {
+        $user = $request->user();
 
-    //         $date = $request->query('date', today()->toDateString());
-    //         $from = Carbon::parse("{$date} " . $request->query('from', '00:00'))->startOfMinute();
-    //         $to   = Carbon::parse("{$date} " . $request->query('to', '23:59'))->endOfMinute();
+        $date = $request->query('date', today()->toDateString());
+        $from = Carbon::parse("{$date} " . $request->query('from', '00:00'))->startOfMinute();
+        $to   = Carbon::parse("{$date} " . $request->query('to', '23:59'))->endOfMinute();
 
-    //         $ownOnly = $user->role !== 'owner';
+        $ownOnly = $user->role !== 'owner';
 
-    //         // $base = fn () => Sale::query()
-    //         //     ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
-    //         //     ->whereBetween('created_at', [$from, $to]);
-    //         $base = fn () => Sale::query()
-    //             ->where('channel', '!=', 'grosir')
-    //             ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
-    //             ->whereBetween('created_at', [$from, $to]);
+        $base = fn () => Sale::query()
+            ->where('channel', '!=', 'grosir')
+            ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
+            ->whereBetween('created_at', [$from, $to]);
 
-    //         $byMethod = $base()->whereNull('voided_at')
-    //             ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
-    //             ->groupBy('payment_method')
-    //             ->get()
-    //             ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
+        $byMethod = $base()->whereNull('voided_at')
+            ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
+            ->groupBy('payment_method')->get()
+            ->mapWithKeys(fn ($r) => [$r->payment_method => ['count' => (int) $r->count, 'total' => (int) $r->total]]);
 
-    //         $voided = $base()->whereNotNull('voided_at')
-    //             ->selectRaw('COUNT(*) as count, COALESCE(SUM(total),0) as total')->first();
+        $voided = $base()->whereNotNull('voided_at')
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(total),0) as total')->first();
 
-    //         $perKasir = $ownOnly ? [] : $base()->whereNull('voided_at')
-    //             ->selectRaw('user_id, COUNT(*) as count, SUM(total) as total')
-    //             ->groupBy('user_id')->with('user:id,username')->get()
-    //             ->map(fn ($r) => ['username' => $r->user?->username ?? '-', 'count' => (int) $r->count, 'total' => (int) $r->total])
-    //             ->values();
+        $perKasir = $ownOnly ? [] : $base()->whereNull('voided_at')
+            ->selectRaw('user_id, COUNT(*) as count, SUM(total) as total')
+            ->groupBy('user_id')->with('user:id,username')->get()
+            ->map(fn ($r) => ['username' => $r->user?->username ?? '-', 'count' => (int) $r->count, 'total' => (int) $r->total])
+            ->values();
 
-    //         return Inertia::render('riwayat/rekap', [
-    //             'filters'  => ['date' => $date, 'from' => $from->format('H:i'), 'to' => $to->format('H:i')],
-    //             'byMethod' => $byMethod,
-    //             'total'    => (int) $byMethod->sum('total'),
-    //             'count'    => (int) $byMethod->sum('count'),
-    //             'voided'   => ['count' => (int) $voided->count, 'total' => (int) $voided->total],
-    //             'perKasir' => $perKasir,
-    //             // dan di bagian return:
-    //             'scopeLabel' => $ownOnly ? $user->username : 'Semua kasir',
-    //             'canSubmit'  => $ownOnly,
-    //         ]);
-    //     }
+        return Inertia::render('riwayat/rekap', [
+            'kind'       => 'toko',
+            'filters'    => ['date' => $date, 'from' => $from->format('H:i'), 'to' => $to->format('H:i')],
+            'byMethod'   => $byMethod,
+            'total'      => (int) $byMethod->sum('total'),
+            'count'      => (int) $byMethod->sum('count'),
+            'voided'     => ['count' => (int) $voided->count, 'total' => (int) $voided->total],
+            'perKasir'   => $perKasir,
+            'scopeLabel' => $ownOnly ? $user->username : 'Semua kasir',
+            'canSubmit'  => $ownOnly,
+        ]);
+    }
+
     public function rekapGrosir(Request $request)
     {
         $user = $request->user();
