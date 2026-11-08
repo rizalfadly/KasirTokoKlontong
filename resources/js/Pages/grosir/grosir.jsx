@@ -106,12 +106,17 @@ export default function Grosir({ products, customers, quotas = {},orders = {}, d
                     <h1 className="text-2xl font-bold">Penjualan Grosir</h1>
                     <p className="text-sm text-slate-500">Harga grosir otomatis berlaku mulai batas jumlah tiap produk.</p>
                 </div>
+                <div className="flex gap-2">
+                <Link href="/setoran" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                    <ClipboardList className="h-4 w-4" /> Setoran saya
+                </Link>
                 <Link
                     href="/grosir/rekap"
                     className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:brightness-105"
                 >
                     <ClipboardList className="h-4 w-4" /> Rekap grosir
                 </Link>
+                </div>
             </div>
             <div className="grid gap-6 lg:grid-cols-3">
                 <ProductGrid products={filtered} cart={cart} search={search} onSearch={setSearch}
