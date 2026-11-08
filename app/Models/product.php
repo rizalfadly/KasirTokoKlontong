@@ -15,12 +15,20 @@ class Product extends Model
     // Satuan yang boleh berpecahan (1,5 kilo). Satuan lain harus bulat.
     public const DECIMAL_UNITS = ['kilo', 'liter'];
 
-    protected $fillable = ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon', 'cost_price'];
+    protected $fillable = [
+        'name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon', 'cost_price',
+        'wholesale_price', 'wholesale_min_qty', 'limit_qty', 'limit_orders', 'limit_period',
+        'limit_orders',
+     ];
+
     protected $hidden = ['cost_price'];
     
 
     protected $casts = [
-        'stock' => 'float',
+        'stock'             => 'float',
+        'wholesale_min_qty' => 'float',
+        'limit_qty'         => 'float',
+        'limit_orders'      => 'integer',
     ];
 
     // Alamat foto dikirim ke tampilan bersama data produk
@@ -59,5 +67,13 @@ class Product extends Model
         } while (static::withTrashed()->where('sku', $sku)->exists());
 
         return $sku;
+    }
+
+    public function priceFor(float $qty, bool $grosir): int
+    {
+        if ($grosir && $this->wholesale_price !== null && $qty >= (float) $this->wholesale_min_qty) {
+            return (int) $this->wholesale_price;
+        }
+        return (int) $this->price;
     }
 }

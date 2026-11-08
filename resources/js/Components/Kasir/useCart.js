@@ -1,14 +1,22 @@
 import { useMemo, useState } from 'react';
 import { round3 } from '../../lib/format';
 
-export function useCart(decimalUnits) {
+export function useCart(decimalUnits, grosir = false) {
     const [cart, setCart] = useState([]);
 
     const isDec = (unit) => decimalUnits.includes(unit);
     const stepOf = (unit) => (isDec(unit) ? 0.5 : 1);
-    const lineTotal = (i) => Math.round(i.price * i.qty);
+    const STEP = 1000; // harus sama dengan di server
+    const roundUp = (n) => Math.ceil(Math.round((n / STEP) * 1e6) / 1e6) * STEP;
 
-    const total = useMemo(() => cart.reduce((sum, i) => sum + Math.round(i.price * i.qty), 0), [cart]);
+    const unitPrice = (i) =>
+        grosir && i.wholesale_price != null && i.qty >= Number(i.wholesale_min_qty ?? 10)
+            ? i.wholesale_price
+            : i.price;
+    const lineTotal = (i) =>
+    isDec(i.unit) ? roundUp(unitPrice(i) * i.qty) : Math.round(unitPrice(i) * i.qty);
+
+    const total = useMemo(() => cart.reduce((s, i) => s + lineTotal(i), 0), [cart]);
 
     function add(p) {
         setCart((prev) => {
@@ -41,5 +49,5 @@ export function useCart(decimalUnits) {
 
     const clear = () => setCart([]);
 
-    return { cart, total, add, setQty, clear, isDec, stepOf, lineTotal };
+    return { cart, total, add, setQty, clear, isDec, stepOf, lineTotal, unitPrice };
 }

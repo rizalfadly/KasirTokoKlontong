@@ -11,6 +11,7 @@ class Sale extends Model
         'offline'   => 'Offline',
         'tokopedia' => 'Tokopedia',
         'shopee'    => 'Shopee',
+        'grosir'    => 'Grosir',
     ];
 
     public const PAYMENTS = [
@@ -21,10 +22,15 @@ class Sale extends Model
     ];
 
     protected $fillable = [
-        'invoice', 'user_id', 'channel', 'payment_method',
+        'invoice', 'user_id', 'customer_id', 'channel', 'payment_method',
         'total', 'paid', 'change_amount',
         'voided_at', 'voided_by', 'void_reason',
     ];
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
 
     protected $casts = [
         'voided_at' => 'datetime',

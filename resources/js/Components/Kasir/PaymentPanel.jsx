@@ -5,7 +5,7 @@ import { CHANNELS, METHODS, PAY_LABEL } from './constants';
 export default function PaymentPanel({
     total, count, channel, setChannel, method, setMethod,
     effectiveMethod, needsCash, paid, setPaid, change,
-    errors, processing, canPay, onCheckout,
+    errors, processing, canPay, onCheckout, grosir = false,
 }) {
     const quick = [
         { label: 'Uang pas', value: total },
@@ -45,7 +45,7 @@ export default function PaymentPanel({
             </div>
 
             {/* Cara bayar (hanya offline) */}
-            {channel === 'offline' && (
+            {(channel === 'offline' || grosir) && (
                 <div>
                     <div className="mb-1.5 text-xs font-medium text-slate-500">Cara bayar</div>
                     <div className="flex flex-wrap gap-2">
@@ -68,7 +68,7 @@ export default function PaymentPanel({
                     </div>
                 </div>
             )}
-
+            
             {needsCash ? (
                 <>
                     <input
@@ -113,6 +113,7 @@ export default function PaymentPanel({
             {errors.paid && <p className="text-sm text-red-600">{errors.paid}</p>}
             {errors.channel && <p className="text-sm text-red-600">{errors.channel}</p>}
             {errors.payment_method && <p className="text-sm text-red-600">{errors.payment_method}</p>}
+            {errors.customer_id && <p className="text-sm text-red-600">{errors.customer_id}</p>}
 
             <button
                 onClick={onCheckout}

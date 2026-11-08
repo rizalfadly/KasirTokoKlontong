@@ -60,9 +60,18 @@ export default function ProdukIndex({
     const isOwner = auth?.user?.role === 'owner';
     const [stockFor, setStockFor] = useState(null);
 
-    const addForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', cost_price: '', unit: 'pcs', icon: '', image: '', remove_image: false });
-    const editForm = useForm({ name: '', sku: '', barcode: '', price: '', stock: '', cost_price: '', unit: 'pcs', icon: '', image: '', remove_image: false });
+    const addForm = useForm({
+        name: '', sku: '', barcode: '', price: '', stock: '', cost_price: '',
+        unit: 'pcs', icon: '', image: '', remove_image: false,
+        wholesale_price: '', wholesale_min_qty: 10, limit_qty: '', limit_period: 'harian', limit_orders: '',
+    });
 
+    const editForm = useForm({
+        name: '', sku: '', barcode: '', price: '', stock: '', cost_price: '',
+        unit: 'pcs', icon: '', image: '', remove_image: false,
+        wholesale_price: '', wholesale_min_qty: 10, limit_qty: '', limit_period: 'harian', limit_orders: '',
+    });
+    
     const q = search.trim().toLowerCase();
     const filtered = products.filter(
         (p) =>
@@ -89,6 +98,10 @@ export default function ProdukIndex({
             barcode: p.barcode ?? '',
             remove_image: false,
             cost_price: p.cost_price ?? '',
+            wholesale_price: p.wholesale_price ?? '',
+            wholesale_min_qty: p.wholesale_min_qty ?? 10,
+            limit_qty: p.limit_qty ?? '',
+            limit_period: p.limit_period ?? 'harian',
         });
         setEditing(p);
     }
@@ -385,6 +398,28 @@ export default function ProdukIndex({
                                         onChange={(e) => editForm.setData('unit', e.target.value)}
                                         error={editForm.errors.unit}
                                     />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Field label="Harga grosir (Rp)" type="number" min="0" placeholder="opsional"
+                                        value={editForm.data.wholesale_price}
+                                        onChange={(e) => editForm.setData('wholesale_price', e.target.value)}
+                                        error={editForm.errors.wholesale_price} />
+                                    <Field label="Grosir mulai dari" type="number" min="0" step="0.001"
+                                        value={editForm.data.wholesale_min_qty}
+                                        onChange={(e) => editForm.setData('wholesale_min_qty', e.target.value)}
+                                        error={editForm.errors.wholesale_min_qty} />
+                                    <Field label="Jatah per pelanggan" type="number" min="0" step="0.001" placeholder="kosong = tanpa jatah"
+                                        value={editForm.data.limit_qty}
+                                        onChange={(e) => editForm.setData('limit_qty', e.target.value)}
+                                        error={editForm.errors.limit_qty} />
+                                    <Field label="Maks. kali beli per periode" type="number" min="1" placeholder="kosong = tanpa batas"
+                                        value={editForm.data.limit_orders}
+                                        onChange={(e) => editForm.setData('limit_orders', e.target.value)}
+                                        error={editForm.errors.limit_orders} />
+                                    <UnitSelect label="Periode jatah" units={['harian', 'mingguan']}
+                                        value={editForm.data.limit_period}
+                                        onChange={(e) => editForm.setData('limit_period', e.target.value)}
+                                        error={editForm.errors.limit_period} />
                                 </div>
                             </div>
 

@@ -20,7 +20,7 @@ export default function SuccessModal({ done, onClose }) {
                     </div>
                     <div className="flex justify-between">
                         <span className="text-slate-500">Asal</span>
-                        <span className="font-semibold">{CHANNELS.find((c) => c.key === done.channel)?.label}</span>
+                        <span className="font-semibold">{CHANNELS.find((c) => c.key === done.channel)?.label ?? 'Grosir'}</span>
                     </div>
                     <div className="flex justify-between">
                         <span className="text-slate-500">{done.needsCash ? 'Dibayar' : 'Bayar via'}</span>

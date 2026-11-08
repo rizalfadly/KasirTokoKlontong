@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { ShoppingCart, ShoppingBasket } from 'lucide-react';
-import { rp, round3 } from '../../lib/format';
+import { rp, num, round3 } from '../../lib/format';
 
-export default function CartList({ cart, setQty, onClear, isDec, stepOf, lineTotal }) {
+export default function CartList({ cart, orders, setQty, onClear, isDec, stepOf, lineTotal, unitPrice, quotas, grosir }) {
     const [tick, setTick] = useState(0); // memaksa kolom jumlah menyegarkan tampilannya
 
     return (
@@ -32,8 +32,23 @@ export default function CartList({ cart, setQty, onClear, isDec, stepOf, lineTot
                                 <div className="min-w-0">
                                     <div className="truncate text-sm font-medium">{i.name}</div>
                                     <div className="text-xs text-slate-500">
-                                        {rp(i.price)} / {i.unit}
+                                        {rp(unitPrice ? unitPrice(i) : i.price)} / {i.unit}
                                     </div>
+                                    {grosir && i.wholesale_price != null && i.qty < Number(i.wholesale_min_qty) && (
+                                        <div className="text-xs text-amber-600">
+                                            Tambah {num(round3(Number(i.wholesale_min_qty) - i.qty))} {i.unit} lagi untuk harga grosir {rp(i.wholesale_price)}
+                                        </div>
+                                    )}
+                                    {quotas?.[i.id] !== undefined && (
+                                        <div className={'text-xs ' + (i.qty > quotas[i.id] ? 'font-semibold text-red-600' : 'text-slate-500')}>
+                                            Sisa jatah: {num(quotas[i.id])} {i.unit}
+                                        </div>
+                                    )}
+                                    {orders?.[i.id] !== undefined && (
+                                        <div className={'text-xs ' + (orders[i.id] === 0 ? 'font-semibold text-red-600' : 'text-slate-500')}>
+                                            Sisa kesempatan beli: {orders[i.id]}x
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-sm font-semibold">{rp(lineTotal(i))}</div>
                             </div>

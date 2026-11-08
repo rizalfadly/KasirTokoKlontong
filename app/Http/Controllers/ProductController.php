@@ -43,7 +43,8 @@ class ProductController extends Controller
         // SKU dikosongkan -> dibuat otomatis
         //$data['sku'] = $data['sku'] ?? Product::generateSku();
 
-        $only = ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon'];
+        $only = ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon',
+         'wholesale_price', 'wholesale_min_qty', 'limit_qty', 'limit_period','limit_orders'];
 
         // Harga beli hanya boleh diisi owner
         if ($request->user()->role === 'owner') {
@@ -63,7 +64,8 @@ class ProductController extends Controller
         $data = $this->validated($request, $product);
 
         //$fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']);
-        $fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'unit', 'icon']);
+        $fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'unit', 'icon',
+                            'wholesale_price', 'wholesale_min_qty', 'limit_qty', 'limit_period', 'limit_orders']);
 
         if ($request->user()->role === 'owner') {
             $fields['cost_price'] = $data['cost_price'] ?? null;
@@ -132,6 +134,19 @@ class ProductController extends Controller
 
         $data = $request->validate([
             'cost_price' => ['nullable', 'integer', 'min:0', 'max:999999999'],
+            'wholesale_price'   => ['nullable', 'integer', 'min:0', 'max:999999999'],
+            'wholesale_min_qty' => ['nullable', 'numeric', 'gt:0', 'max:999999'],
+            'limit_orders'      => ['nullable', 'integer', 'min:1', 'max:100'],
+            'limit_period'      => ['nullable', Rule::in(['harian', 'mingguan'])],
+            'limit_qty'         => [
+                'nullable', 'numeric', 'gt:0', 'max:999999',
+                function ($attribute, $value, $fail) use ($request) {
+                    $min = (float) ($request->input('wholesale_min_qty') ?: 10);
+                    if ($value !== null && (float) $value < $min) {
+                        $fail("Jatah harus sama atau lebih besar dari batas harga grosir ({$min}).");
+                    }
+                },
+            ],
             'name'         => ['required', 'string', 'max:100'],
             'sku'          => [
                 'required', 'string', 'max:40', 'regex:/^[A-Za-z0-9._-]+$/',
@@ -180,6 +195,8 @@ class ProductController extends Controller
         }
 
         $data['stock'] = $stock;
+        $data['wholesale_min_qty'] = $data['wholesale_min_qty'] ?? 10;
+        $data['limit_period']      = $data['limit_period'] ?? 'harian';
 
         return $data;
     }

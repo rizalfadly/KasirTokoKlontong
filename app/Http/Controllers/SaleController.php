@@ -14,127 +14,306 @@ use App\Services\StockService;
 use App\Services\Notifier;
 use Carbon\Carbon;
 use App\Support\Period;
+use App\Models\Customer;
 
 class SaleController extends Controller
 {
     public function create()
     {
         return Inertia::render('kasir/kasir', [
-            'products'     => Product::where('stock', '>', 0)->orderBy('name')->get(),
+            'products'     => Product::where('stock', '>', 0)->orderBy('name')->get()->makeHidden('cost_price'),
             'decimalUnits' => Product::DECIMAL_UNITS,
         ]);
     }
 
-    public function store(Request $request)
-    //public function product_id(Request $request)
-    {
-        $data = $request->validate([
-            'items'              => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', Rule::exists('products', 'id')->whereNull('deleted_at')],
-            'items.*.qty'        => ['required', 'numeric', 'gt:0'],
-            'channel'            => ['required', Rule::in(array_keys(Sale::CHANNELS))],
-            'payment_method'     => ['nullable', Rule::in(['tunai', 'qris', 'transfer'])],
-            'paid'               => ['nullable', 'integer', 'min:0'],
-        ]);
+    // public function store(Request $request)
+    // //public function product_id(Request $request)
+    // {
+    //     $data = $request->validate([
+    //         'items'              => ['required', 'array', 'min:1'],
+    //         'items.*.product_id' => ['required', Rule::exists('products', 'id')->whereNull('deleted_at')],
+    //         'items.*.qty'        => ['required', 'numeric', 'gt:0'],
+    //         'channel'            => ['required', Rule::in(array_keys(Sale::CHANNELS))],
+    //         'payment_method'     => ['nullable', Rule::in(['tunai', 'qris', 'transfer'])],
+    //         'paid'               => ['nullable', 'integer', 'min:0'],
+    //     ]);
 
-        // Gabungkan jika produk yang sama muncul dua kali
-        $items = collect($data['items'])
-            ->groupBy('product_id')
-            ->map(fn ($group, $productId) => [
-                'product_id' => (int) $productId,
-                'qty'        => round((float) $group->sum('qty'), 3),
-            ])
-            ->values();
+    //     // Gabungkan jika produk yang sama muncul dua kali
+    //     $items = collect($data['items'])
+    //         ->groupBy('product_id')
+    //         ->map(fn ($group, $productId) => [
+    //             'product_id' => (int) $productId,
+    //             'qty'        => round((float) $group->sum('qty'), 3),
+    //         ])
+    //         ->values();
 
-        DB::transaction(function () use ($items, $data, $request) {
-            $products = Product::whereIn('id', $items->pluck('product_id'))
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('id');
+    //     DB::transaction(function () use ($items, $data, $request) {
+    //         $products = Product::whereIn('id', $items->pluck('product_id'))
+    //             ->lockForUpdate()
+    //             ->get()
+    //             ->keyBy('id');
 
-            $total = 0;
-            $rows = [];
+    //         $total = 0;
+    //         $rows = [];
 
-            foreach ($items as $item) {
-                $product = $products[$item['product_id']];
-                $qty = $item['qty'];
+    //         foreach ($items as $item) {
+    //             $product = $products[$item['product_id']];
+    //             $qty = $item['qty'];
 
-                if ($qty <= 0) {
-                    throw ValidationException::withMessages([
-                        'items' => "Jumlah {$product->name} tidak valid.",
-                    ]);
-                }
+    //             if ($qty <= 0) {
+    //                 throw ValidationException::withMessages([
+    //                     'items' => "Jumlah {$product->name} tidak valid.",
+    //                 ]);
+    //             }
 
-                // Satuan selain kilo/liter harus bilangan bulat
-                if (! in_array($product->unit, Product::DECIMAL_UNITS, true) && floor($qty) != $qty) {
-                    throw ValidationException::withMessages([
-                        'items' => "Jumlah {$product->name} harus bilangan bulat ({$product->unit}).",
-                    ]);
-                }
+    //             // Satuan selain kilo/liter harus bilangan bulat
+    //             if (! in_array($product->unit, Product::DECIMAL_UNITS, true) && floor($qty) != $qty) {
+    //                 throw ValidationException::withMessages([
+    //                     'items' => "Jumlah {$product->name} harus bilangan bulat ({$product->unit}).",
+    //                 ]);
+    //             }
 
-                if ($product->stock < $qty) {
-                    $sisa = rtrim(rtrim(number_format($product->stock, 3, ',', ''), '0'), ',');
+    //             if ($product->stock < $qty) {
+    //                 $sisa = rtrim(rtrim(number_format($product->stock, 3, ',', ''), '0'), ',');
 
-                    throw ValidationException::withMessages([
-                        'items' => "Stok {$product->name} tidak cukup (sisa {$sisa} {$product->unit}).",
-                    ]);
-                }
+    //                 throw ValidationException::withMessages([
+    //                     'items' => "Stok {$product->name} tidak cukup (sisa {$sisa} {$product->unit}).",
+    //                 ]);
+    //             }
 
-                $subtotal = (int) round($product->price * $qty);
-                $total += $subtotal;
+    //             $subtotal = (int) round($product->price * $qty);
+    //             $total += $subtotal;
 
-                $rows[] = [
-                    'product_id' => $product->id,
-                    'qty'        => $qty,
-                    'price'      => $product->price,
-                    'cost_price' => $product->cost_price,
-                    'subtotal'   => $subtotal,
-                ];
+    //             $rows[] = [
+    //                 'product_id' => $product->id,
+    //                 'qty'        => $qty,
+    //                 'price'      => $product->price,
+    //                 'cost_price' => $product->cost_price,
+    //                 'subtotal'   => $subtotal,
+    //             ];
 
-                //$product->decrement('stock', $qty);
+    //             //$product->decrement('stock', $qty);
+    //         }
+
+    //        // Offline: kasir memilih cara bayar. Tokopedia/Shopee: selalu "marketplace".
+    //         $method = $data['channel'] === 'offline'
+    //             ? ($data['payment_method'] ?? 'tunai')
+    //             : 'marketplace';
+
+    //         // Uang tunai hanya dihitung untuk pembayaran tunai
+    //         $paid = $method === 'tunai' ? (int) ($data['paid'] ?? 0) : $total;
+
+    //         if ($paid < $total) {
+    //             throw ValidationException::withMessages([
+    //                 'paid' => 'Uang yang dibayar kurang dari total.',
+    //             ]);
+    //         }
+
+    //         $sale = Sale::create([
+    //             'invoice'        => 'INV-' . now()->format('ymdHis') . random_int(100, 999),
+    //             'user_id'        => $request->user()->id,
+    //             'channel'        => $data['channel'],
+    //             'payment_method' => $method,
+    //             'total'          => $total,
+    //             'paid'           => $paid,
+    //             'change_amount'  => $paid - $total,
+    //         ]);
+
+    //         $sale->items()->createMany($rows);
+
+    //         // Catat pengurangan stok di buku stok
+    //         foreach ($rows as $row) {
+    //             StockService::move(
+    //                 $products[$row['product_id']],
+    //                 -$row['qty'],
+    //                 'sale',
+    //                 $request->user()->id,
+    //                 null,
+    //                 $sale->id,
+    //             );
+    //         }
+    //     });
+
+    //     return back();
+    // }
+    public function store(Request $request)       { return $this->process($request, false); }
+    public function storeGrosir(Request $request) { return $this->process($request, true); }
+
+        private function bought(int $customerId, Product $p): float
+        {
+            $since = $p->limit_period === 'mingguan' ? now()->startOfWeek() : now()->startOfDay();
+
+            return (float) DB::table('sale_items')
+                ->join('sales', 'sales.id', '=', 'sale_items.sale_id')
+                ->where('sales.customer_id', $customerId)
+                ->whereNull('sales.voided_at')
+                ->where('sales.created_at', '>=', $since)
+                ->where('sale_items.product_id', $p->id)
+                ->sum('sale_items.qty');
+        }
+
+        // Berapa kali pelanggan membeli produk ini pada periode jatah (batal tidak dihitung)
+        private function orderCount(int $customerId, Product $p): int
+        {
+            $since = $p->limit_period === 'mingguan' ? now()->startOfWeek() : now()->startOfDay();
+
+            return (int) DB::table('sales')
+                ->join('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+                ->where('sales.customer_id', $customerId)
+                ->whereNull('sales.voided_at')
+                ->where('sales.created_at', '>=', $since)
+                ->where('sale_items.product_id', $p->id)
+                ->distinct()
+                ->count('sales.id');
+        }
+
+        // Bulatkan ke atas ke kelipatan $step (1000 = ribuan, 1 = rupiah)
+        private function roundUp(float $amount, int $step = 1000): int
+        {
+            return (int) (ceil(round($amount / $step, 6)) * $step);
+        }
+
+        private function process(Request $request, bool $grosir)
+        {
+            $channels = array_keys(Sale::CHANNELS);
+            if (! $grosir) {
+                $channels = array_values(array_diff($channels, ['grosir']));
             }
 
-           // Offline: kasir memilih cara bayar. Tokopedia/Shopee: selalu "marketplace".
-            $method = $data['channel'] === 'offline'
-                ? ($data['payment_method'] ?? 'tunai')
-                : 'marketplace';
+            // Bulatkan ke atas ke kelipatan $step (1000 = ribuan, 1 = rupiah)
 
-            // Uang tunai hanya dihitung untuk pembayaran tunai
-            $paid = $method === 'tunai' ? (int) ($data['paid'] ?? 0) : $total;
+            $data = $request->validate([
+                'items'              => ['required', 'array', 'min:1'],
+                'items.*.product_id' => ['required', Rule::exists('products', 'id')->whereNull('deleted_at')],
+                'items.*.qty'        => ['required', 'numeric', 'gt:0'],
+                'channel'            => $grosir ? ['nullable'] : ['required', Rule::in($channels)],
+                'payment_method'     => ['nullable', Rule::in(['tunai', 'qris', 'transfer'])],
+                'paid'               => ['nullable', 'integer', 'min:0'],
+                'customer_id'        => $grosir
+                    ? ['required', Rule::exists('customers', 'id')->where('is_active', true)]
+                    : ['prohibited'],
+            ], ['customer_id.required' => 'Pilih pelanggan dulu untuk penjualan grosir.']);
 
-            if ($paid < $total) {
-                throw ValidationException::withMessages([
-                    'paid' => 'Uang yang dibayar kurang dari total.',
+            $channel = $grosir ? 'grosir' : $data['channel'];
+
+            $items = collect($data['items'])
+                ->groupBy('product_id')
+                ->map(fn ($g, $id) => ['product_id' => (int) $id, 'qty' => round((float) $g->sum('qty'), 3)])
+                ->values();
+
+            DB::transaction(function () use ($items, $data, $request, $grosir, $channel) {
+                $products = Product::whereIn('id', $items->pluck('product_id'))->lockForUpdate()->get()->keyBy('id');
+
+                $total = 0;
+                $rows = [];
+
+                foreach ($items as $item) {
+                    $product = $products[$item['product_id']];
+                    $qty = $item['qty'];
+
+                    if ($qty <= 0) {
+                        throw ValidationException::withMessages(['items' => "Jumlah {$product->name} tidak valid."]);
+                    }
+                    if (! in_array($product->unit, Product::DECIMAL_UNITS, true) && floor($qty) != $qty) {
+                        throw ValidationException::withMessages(['items' => "Jumlah {$product->name} harus bilangan bulat ({$product->unit})."]);
+                    }
+                    if ($product->stock < $qty) {
+                        $sisa = rtrim(rtrim(number_format($product->stock, 3, ',', ''), '0'), ',');
+                        throw ValidationException::withMessages(['items' => "Stok {$product->name} tidak cukup (sisa {$sisa} {$product->unit})."]);
+                    }
+
+                    if ($grosir && $product->limit_orders !== null) {
+                        $sudah = $this->orderCount((int) $data['customer_id'], $product);
+                        if ($sudah >= $product->limit_orders) {
+                            $kapan = $product->limit_period === 'mingguan' ? 'minggu ini' : 'hari ini';
+                            throw ValidationException::withMessages([
+                                'items' => "Pelanggan ini sudah membeli {$product->name} {$sudah}x {$kapan} (maksimal {$product->limit_orders}x).",
+                            ]);
+                        }
+                    }
+
+                    if ($grosir && $product->limit_qty !== null) {
+                        $sisaJatah = round((float) $product->limit_qty - $this->bought((int) $data['customer_id'], $product), 3);
+                        if ($qty > $sisaJatah) {
+                            $kapan = $product->limit_period === 'mingguan' ? 'minggu ini' : 'hari ini';
+                            throw ValidationException::withMessages([
+                                'items' => "Jatah {$product->name} untuk pelanggan ini tinggal " . max($sisaJatah, 0) . " {$product->unit} {$kapan}.",
+                            ]);
+                        }
+                    }
+
+                    $price = $product->priceFor($qty, $grosir);
+                    $raw = $price * $qty;
+                    $subtotal = in_array($product->unit, Product::DECIMAL_UNITS, true)
+                        ? $this->roundUp($raw)
+                        : (int) round($raw);
+                    $total += $subtotal;
+
+                    $rows[] = [
+                        'product_id' => $product->id,
+                        'qty'        => $qty,
+                        'price'      => $price,
+                        'cost_price' => $product->cost_price,
+                        'subtotal'   => $subtotal,
+                    ];
+                }
+
+                $method = $grosir
+                    ? ($data['payment_method'] ?? 'transfer')
+                    : ($channel === 'offline' ? ($data['payment_method'] ?? 'tunai') : 'marketplace');
+
+                $paid = $method === 'tunai' ? (int) ($data['paid'] ?? 0) : $total;
+
+                if ($paid < $total) {
+                    throw ValidationException::withMessages(['paid' => 'Uang yang dibayar kurang dari total.']);
+                }
+
+                $sale = Sale::create([
+                    'invoice'        => 'INV-' . now()->format('ymdHis') . random_int(100, 999),
+                    'user_id'        => $request->user()->id,
+                    'customer_id'    => $grosir ? $data['customer_id'] : null,
+                    'channel'        => $channel,
+                    'payment_method' => $method,
+                    'total'          => $total,
+                    'paid'           => $paid,
+                    'change_amount'  => $paid - $total,
                 ]);
+
+                $sale->items()->createMany($rows);
+
+                foreach ($rows as $row) {
+                    StockService::move($products[$row['product_id']], -$row['qty'], 'sale', $request->user()->id, null, $sale->id);
+                }
+            });
+
+            return back();
+        }
+
+        public function createGrosir(Request $request)
+        {
+            $products = Product::where('stock', '>', 0)->orderBy('name')->get()->makeHidden('cost_price');
+
+            $quotas = [];
+            $orders = [];
+            if ($cid = (int) $request->query('customer')) {
+                foreach ($products as $p) {
+                    if ($p->limit_qty !== null) {
+                        $quotas[$p->id] = max(round((float) $p->limit_qty - $this->bought($cid, $p), 3), 0);
+                    }
+                    if ($p->limit_orders !== null) {
+                        $orders[$p->id] = max($p->limit_orders - $this->orderCount($cid, $p), 0);
+                    }
+                }
             }
 
-            $sale = Sale::create([
-                'invoice'        => 'INV-' . now()->format('ymdHis') . random_int(100, 999),
-                'user_id'        => $request->user()->id,
-                'channel'        => $data['channel'],
-                'payment_method' => $method,
-                'total'          => $total,
-                'paid'           => $paid,
-                'change_amount'  => $paid - $total,
+            return Inertia::render('grosir/grosir', [
+                'products'     => $products,
+                'customers'    => Customer::where('is_active', true)->orderBy('name')->get(['id', 'name', 'phone']),
+                'quotas'       => (object) $quotas,
+                'orders'       => (object) $orders,
+                'decimalUnits' => Product::DECIMAL_UNITS,
             ]);
-
-            $sale->items()->createMany($rows);
-
-            // Catat pengurangan stok di buku stok
-            foreach ($rows as $row) {
-                StockService::move(
-                    $products[$row['product_id']],
-                    -$row['qty'],
-                    'sale',
-                    $request->user()->id,
-                    null,
-                    $sale->id,
-                );
-            }
-        });
-
-        return back();
-    }
+        }
 
     public function index(Request $request)
             {
@@ -145,7 +324,8 @@ class SaleController extends Controller
 
                 // Aturan akses: kasir hanya melihat transaksinya sendiri
                 $scope = fn () => Sale::query()
-                    ->when($user->role === 'kasir', fn ($s) => $s->where('user_id', $user->id))
+                    //->when($user->role === 'kasir', fn ($s) => $s->where('user_id', $user->id))
+                    ->when($user->role !== 'owner', fn ($s) => $s->where('user_id', $user->id))
                     ->when($period->start !== null, fn ($s) => $period->apply($s));
 
                 $sales = $scope()
@@ -180,7 +360,8 @@ class SaleController extends Controller
 
     public function show(Request $request, Sale $sale)
     {
-        abort_if($request->user()->role === 'kasir' && $sale->user_id !== $request->user()->id, 403);
+        //abort_if($request->user()->role !== 'kasir' && $sale->user_id !== $request->user()->id, 403);
+        abort_if($request->user()->role !== 'owner' && $sale->user_id !== $request->user()->id, 403);
 
         $sale->load(['items.product:id,name,unit', 'user:id,name,username', 'voider:id,name,username']);
 
@@ -208,7 +389,11 @@ class SaleController extends Controller
 
             $ownOnly = $user->role !== 'owner';
 
+            // $base = fn () => Sale::query()
+            //     ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
+            //     ->whereBetween('created_at', [$from, $to]);
             $base = fn () => Sale::query()
+                ->where('channel', '!=', 'grosir')
                 ->when($ownOnly, fn ($q) => $q->where('user_id', $user->id))
                 ->whereBetween('created_at', [$from, $to]);
 

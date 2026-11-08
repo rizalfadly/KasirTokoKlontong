@@ -11,7 +11,7 @@ const PAPERS = {
     80: { label: 'Struk 80 mm', width: '80mm', page: '80mm auto' },
     a4: { label: 'A4', width: '100%', page: 'A4' },
 };
-    const CHANNEL_LABEL = { offline: 'Offline', tokopedia: 'Tokopedia', shopee: 'Shopee' };
+    const CHANNEL_LABEL = { offline: 'Offline', tokopedia: 'Tokopedia', shopee: 'Shopee', grosir: 'Grosir' };
     const PAY_LABEL = { tunai: 'Tunai', qris: 'QRIS', transfer: 'Transfer', marketplace: 'Via marketplace' };
     
 function Row({ l, r, bold }) {

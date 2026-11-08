@@ -37,6 +37,7 @@ export const menu = [
             { label: 'Produk', href: '/produk', icon: Package, quick: true },
             { label: 'Stok Opname', href: '/opname', icon: ClipboardCheck },
             { label: 'Buku Stok', href: '/buku-stok', icon: BookOpen },
+            { label: 'Grosir', href: '/grosir', icon: Truck},
         ],
     },
     { label: 'Laporan', href: '/laporan', icon: TrendingUp, roles: ['owner', 'admin'] },
@@ -47,7 +48,7 @@ export const menu = [
         items: [
             { label: 'Pengguna', href: '/pengguna', icon: Users },
             { label: 'Toko', href: '/pengaturan', icon: Store },
-            { label: 'Supplier', href: '/supplier', icon: Truck }
+            { label: 'Supplier', href: '/supplier', icon: Truck },
         ],
     },
 ];

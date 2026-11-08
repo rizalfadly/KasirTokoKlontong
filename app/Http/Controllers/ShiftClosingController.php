@@ -46,7 +46,10 @@ class ShiftClosingController extends Controller
         $from = Carbon::parse("{$data['date']} {$data['from']}")->startOfMinute();
         $to   = Carbon::parse("{$data['date']} {$data['to']}")->endOfMinute();
 
-        $base = fn () => Sale::where('user_id', $user->id)->whereBetween('created_at', [$from, $to]);
+       // $base = fn () => Sale::where('user_id', $user->id)->whereBetween('created_at', [$from, $to]);
+       $base = fn () => Sale::where('user_id', $user->id)
+            ->where('channel', '!=', 'grosir')
+            ->whereBetween('created_at', [$from, $to]);
 
         $byMethod = $base()->whereNull('voided_at')
             ->selectRaw('payment_method, COUNT(*) as count, COALESCE(SUM(total),0) as total')
@@ -175,7 +178,10 @@ class ShiftClosingController extends Controller
         ]);
 
         // Penjualan dihitung ulang dari periode yang sama (transaksi bisa berubah sejak dikirim)
+        // $base = fn () => Sale::where('user_id', $user->id)
+        //     ->whereBetween('created_at', [$closing->period_start, $closing->period_end]);
         $base = fn () => Sale::where('user_id', $user->id)
+            ->where('channel', '!=', 'grosir')
             ->whereBetween('created_at', [$closing->period_start, $closing->period_end]);
 
         $byMethod = $base()->whereNull('voided_at')

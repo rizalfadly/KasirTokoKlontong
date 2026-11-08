@@ -13,6 +13,7 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckRole;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CustomerController;
 
 Route::redirect('/', '/dashboard');
 
@@ -66,6 +67,11 @@ Route::middleware(['auth', CheckRole::class . ':owner,admin'])->group(function (
     Route::post('/opname/{opname}/kirim', [OpnameController::class, 'submit'])->whereNumber('opname');
     Route::delete('/opname/{opname}', [OpnameController::class, 'destroy'])->whereNumber('opname');
     Route::get('/opname/{opname}/export', [OpnameController::class, 'export'])->whereNumber('opname');
+
+    //grosir
+    Route::get('/grosir', [SaleController::class, 'createGrosir']);
+    Route::post('/grosir', [SaleController::class, 'storeGrosir']);
+    Route::post('/pelanggan', [CustomerController::class, 'store']);
   
 });
 
