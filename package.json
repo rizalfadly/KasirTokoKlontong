@@ -23,6 +23,7 @@
         "vite": "^7.0.7"
     },
     "dependencies": {
+        "@fontsource/figtree": "^5.3.0",
         "lucide-react": "^1.61.0"
     }
 }
