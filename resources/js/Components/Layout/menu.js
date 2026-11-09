@@ -16,8 +16,9 @@ import {
     Truck,
 } from 'lucide-react';
 
-// Menu dikelompokkan. Tanpa "roles" = tampil untuk semua yang sudah login.
-// quick: true = ikut tampil di bar bawah (HP).
+// Menu dikelompokkan secara modular. 
+// Tanpa properti "roles" = tampil untuk semua pengguna yang sudah login.
+// quick: true = ikut tampil di bar navigasi bawah (Mobile).
 export const menu = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, quick: true },
     {
@@ -37,7 +38,7 @@ export const menu = [
             { label: 'Produk', href: '/produk', icon: Package, quick: true },
             { label: 'Stok Opname', href: '/opname', icon: ClipboardCheck },
             { label: 'Buku Stok', href: '/buku-stok', icon: BookOpen },
-            { label: 'Grosir', href: '/grosir', icon: Truck},
+            { label: 'Grosir', href: '/grosir', icon: Truck },
         ],
     },
     { label: 'Laporan', href: '/laporan', icon: TrendingUp, roles: ['owner', 'admin'] },
@@ -53,9 +54,13 @@ export const menu = [
     },
 ];
 
-export const ROLE_LABEL = { owner: 'Pemilik Toko', admin: 'Admin', kasir: 'Kasir' };
+export const ROLE_LABEL = { 
+    owner: 'Pemilik Toko', 
+    admin: 'Admin Sistem', 
+    kasir: 'Kasir Toko' 
+};
 
-// Menu yang boleh dilihat peran ini; grup yang kosong dibuang
+// Menyaring menu sesuai peran (role) pengguna yang sedang login
 export function menuFor(role) {
     const visible = (roles) => !roles || roles.includes(role);
 
@@ -65,10 +70,10 @@ export function menuFor(role) {
         .filter((s) => !s.items || s.items.length > 0);
 }
 
-// Item yang tampil di bar bawah (HP)
+// Menampilkan item pilihan cepat di bar navigasi bawah khusus perangkat mobile
 export const quickItems = (sections) => sections.flatMap((s) => s.items ?? [s]).filter((i) => i.quick);
 
-// Mengecek apakah sebuah alamat sedang dibuka
+// Hook untuk mengecek apakah URL / rute saat ini sedang aktif
 export function useIsActive() {
     const { url } = usePage();
     const path = url.split('?')[0];

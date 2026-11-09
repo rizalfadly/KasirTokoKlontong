@@ -47,9 +47,6 @@ class DashboardController extends Controller
             ->map(fn ($i) => ['name' => $i->product?->name ?? '-', 'qty' => (float) $i->qty]);
 
         return Inertia::render('Dashboard', [
-            // 'pendingOpnames' => auth()->user()->role === 'owner'
-            //     ? StockOpname::where('status', 'submitted')->count()
-            //     : 0,
             'stats' => [
                 'todaySales'    => (int) Sale::active()->whereDate('created_at', today())->sum('total'),
                 'todayCount'    => Sale::active()->whereDate('created_at', today())->count(),

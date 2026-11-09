@@ -1,17 +1,17 @@
 import { router } from '@inertiajs/react';
-import { Ban, Bell, CheckCheck, ClipboardCheck, Info, Package, PackagePlus, SlidersHorizontal, Wallet } from 'lucide-react';
+import { Ban, Bell, CheckCheck, ClipboardCheck, Info, Package, PackagePlus, SlidersHorizontal, Wallet, Sparkles } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const POLL_MS = 10000; // cek notifikasi baru tiap 20 detik
+const POLL_MS = 10000; // cek notifikasi baru tiap 10 detik
 
 const KIND = {
-    opname: [ClipboardCheck, 'bg-sky-100 text-sky-700'],
-    shift: [Wallet, 'bg-emerald-100 text-emerald-700'],
-    void: [Ban, 'bg-red-100 text-red-600'],
-    stock_low: [Package, 'bg-orange-100 text-orange-600'],
-    stock_out: [Package, 'bg-red-100 text-red-600'],
-    purchase: [PackagePlus, 'bg-emerald-100 text-emerald-700'],
-    adjustment: [SlidersHorizontal, 'bg-violet-100 text-violet-700'],
+    opname: [ClipboardCheck, 'bg-sky-100 text-sky-700 shadow-sm shadow-sky-100'],
+    shift: [Wallet, 'bg-emerald-100 text-emerald-700 shadow-sm shadow-emerald-100'],
+    void: [Ban, 'bg-rose-100 text-rose-600 shadow-sm shadow-rose-100'],
+    stock_low: [Package, 'bg-amber-100 text-amber-700 shadow-sm shadow-amber-100'],
+    stock_out: [Package, 'bg-rose-100 text-rose-600 shadow-sm shadow-rose-100'],
+    purchase: [PackagePlus, 'bg-emerald-100 text-emerald-700 shadow-sm shadow-emerald-100'],
+    adjustment: [SlidersHorizontal, 'bg-indigo-100 text-indigo-700 shadow-sm shadow-indigo-100'],
 };
 
 const xsrf = () => decodeURIComponent((document.cookie.match(/XSRF-TOKEN=([^;]+)/) || [])[1] ?? '');
@@ -37,8 +37,8 @@ function KindIcon({ kind }) {
     const [Icon, style] = KIND[kind] ?? [Info, 'bg-slate-100 text-slate-600'];
 
     return (
-        <div className={'flex h-9 w-9 shrink-0 items-center justify-center rounded-full ' + style}>
-            <Icon className="h-4 w-4" />
+        <div className={'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ' + style}>
+            <Icon className="h-5 w-5" strokeWidth={2.2} />
         </div>
     );
 }
@@ -132,74 +132,86 @@ export default function NotificationBell() {
                 type="button"
                 onClick={() => setOpen((o) => !o)}
                 aria-label="Notifikasi"
-                className="relative rounded-xl p-2.5 text-slate-600 transition hover:bg-white/80"
+                className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 border border-slate-200/80 text-slate-600 shadow-sm transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200"
             >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-5 w-5" strokeWidth={2} />
                 {data.unread > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-black text-white shadow-md shadow-rose-500/40 animate-pulse">
                         {data.unread > 9 ? '9+' : data.unread}
                     </span>
                 )}
             </button>
 
-            {/* Pemberitahuan singkat saat ada notifikasi baru */}
+            {/* Pemberitahuan singkat (Toast) saat ada notifikasi baru */}
             {toast && !open && (
                 <button
                     type="button"
                     onClick={() => openItem(toast)}
-                    className="absolute right-0 top-full z-50 mt-2 flex w-80 max-w-[calc(100vw-2rem)] items-start gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left shadow-2xl"
+                    className="absolute right-0 top-full z-50 mt-3 flex w-80 max-w-[calc(100vw-2rem)] items-start gap-3 rounded-3xl border border-indigo-100 bg-white/95 p-4 text-left shadow-2xl backdrop-blur-xl animate-in slide-in-from-top-2 duration-300 hover:border-indigo-300 transition-all"
                 >
                     <KindIcon kind={toast.kind} />
-                    <div className="min-w-0">
-                        <div className="text-sm font-semibold">{toast.title}</div>
-                        <div className="line-clamp-2 text-xs text-slate-500">{toast.body}</div>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 mb-0.5">
+                            <Sparkles className="h-3.5 w-3.5" /> Notifikasi Baru
+                        </div>
+                        <div className="text-sm font-bold text-slate-800 truncate">{toast.title}</div>
+                        <div className="line-clamp-2 text-xs text-slate-500 mt-0.5">{toast.body}</div>
                     </div>
                 </button>
             )}
 
+            {/* Popover Panel Daftar Notifikasi */}
             {open && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-                    <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-                        <div className="text-sm font-semibold">Notifikasi</div>
+                <div className="absolute right-0 top-full z-50 mt-3 w-80 sm:w-96 max-w-[calc(100vw-2rem)] overflow-hidden rounded-3xl border border-slate-100 bg-white/95 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-200">
+                    <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
+                        <div className="flex items-center gap-2">
+                            <div className="text-sm font-extrabold text-slate-800">Notifikasi</div>
+                            {data.unread > 0 && (
+                                <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-700">
+                                    {data.unread} baru
+                                </span>
+                            )}
+                        </div>
                         {data.unread > 0 && (
                             <button
                                 type="button"
                                 onClick={readAll}
-                                className="inline-flex items-center gap-1 text-xs font-medium text-orange-600 hover:underline"
+                                className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors"
                             >
-                                <CheckCheck className="h-3.5 w-3.5" /> Tandai semua dibaca
+                                <CheckCheck className="h-4 w-4" /> Tandai semua dibaca
                             </button>
                         )}
                     </div>
 
                     {data.items.length === 0 ? (
-                        <div className="px-4 py-10 text-center text-sm text-slate-400">
-                            <Bell className="mx-auto mb-2 h-8 w-8 text-slate-300" />
-                            Belum ada notifikasi.
+                        <div className="flex flex-col items-center justify-center px-4 py-12 text-center text-sm text-slate-400">
+                            <Bell className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                            <span className="font-semibold text-slate-600">Belum ada notifikasi</span>
+                            <p className="text-xs text-slate-400 mt-1">Informasi aktivitas toko akan muncul di sini.</p>
                         </div>
                     ) : (
-                        <ul className="max-h-96 divide-y divide-slate-50 overflow-y-auto">
+                        <ul className="max-h-[380px] divide-y divide-slate-100 overflow-y-auto">
                             {data.items.map((n) => (
                                 <li key={n.id}>
                                     <button
                                         type="button"
                                         onClick={() => openItem(n)}
                                         className={
-                                            'flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-amber-50/60 ' +
-                                            (n.read ? '' : 'bg-sky-50/60')
+                                            'flex w-full items-start gap-3.5 px-5 py-3.5 text-left transition-all hover:bg-indigo-50/50 ' +
+                                            (n.read ? 'bg-white' : 'bg-indigo-50/30 font-semibold')
                                         }
                                     >
                                         <KindIcon kind={n.kind} />
                                         <div className="min-w-0 flex-1">
-                                            <div className="flex items-center justify-between gap-2">
-                                                <span className={'truncate text-sm ' + (n.read ? 'font-medium' : 'font-bold')}>
+                                            <div className="flex items-center justify-between gap-2 mb-1">
+                                                <span className={'truncate text-sm ' + (n.read ? 'font-bold text-slate-700' : 'font-extrabold text-slate-900')}>
                                                     {n.title}
                                                 </span>
-                                                <span className="shrink-0 text-[11px] text-slate-400">{ago(n.time)}</span>
+                                                <span className="shrink-0 text-[11px] font-medium text-slate-400">{ago(n.time)}</span>
                                             </div>
-                                            <div className="line-clamp-2 text-xs text-slate-500">{n.body}</div>
+                                            <div className="line-clamp-2 text-xs text-slate-500 leading-relaxed">{n.body}</div>
                                         </div>
-                                        {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-orange-500" />}
+                                        {!n.read && <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-indigo-600 shadow-sm shadow-indigo-400" />}
                                     </button>
                                 </li>
                             ))}
