@@ -1,14 +1,15 @@
 import { router, useForm } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Clock, MapPin, MessageCircle, Pencil, Phone, Trash2, User, Wallet, X } from 'lucide-react';
-//import { rp } from '../../lib/format';
+import { ArrowDown, ArrowUp, Clock, MapPin, MessageCircle, Pencil, Phone, Trash2, User, Wallet, X, Building2, Package, Save } from 'lucide-react';
 import { TERM_LABEL, TYPE_LABEL, TYPE_STYLE, waLink } from './constants';
 import { num, rp } from '../../lib/format';
 
 function Info({ icon: Icon, children }) {
     return (
-        <div className="flex items-start gap-2.5 text-sm text-slate-600">
-            <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-            <div className="min-w-0 break-words">{children}</div>
+        <div className="flex items-start gap-3 text-xs md:text-sm font-bold text-slate-700 bg-white/60 p-3 rounded-2xl border border-slate-100">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <Icon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 break-words self-center">{children}</div>
         </div>
     );
 }
@@ -47,43 +48,50 @@ export default function SupplierDetail({ supplier, products, onClose, onEdit }) 
     const prices = [...supplier.prices].sort((a, b) => (a.product?.name ?? '').localeCompare(b.product?.name ?? ''));
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4">
-            <div className="my-6 w-full max-w-2xl space-y-5 rounded-3xl bg-white p-6 shadow-2xl">
-                <div className="flex items-start justify-between gap-3">
-                    <div>
-                        <h2 className="text-xl font-bold">{supplier.name}</h2>
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                            <span className={'rounded-full px-2.5 py-1 text-xs font-semibold ' + TYPE_STYLE[supplier.type]}>
-                                {TYPE_LABEL[supplier.type]}
-                            </span>
-                            {!supplier.is_active && (
-                                <span className="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-500">
-                                    Nonaktif
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="my-6 w-full max-w-2xl space-y-6 rounded-3xl bg-white p-6 md:p-8 shadow-2xl">
+                
+                {/* Header Modal */}
+                <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-3">
+                        <div className={'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-base font-black shadow-inner ' + TYPE_STYLE[supplier.type]}>
+                            {supplier.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black text-slate-800">{supplier.name}</h2>
+                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                                <span className={'rounded-full px-3 py-1 text-xs font-black ' + TYPE_STYLE[supplier.type]}>
+                                    {TYPE_LABEL[supplier.type]}
                                 </span>
-                            )}
+                                {!supplier.is_active && (
+                                    <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-black text-slate-500">
+                                        Nonaktif
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-1">
+                    <div className="flex shrink-0 items-center gap-2">
                         <button
                             onClick={onEdit}
-                            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50"
+                            className="inline-flex items-center gap-1.5 rounded-2xl bg-indigo-50 px-4 py-2 text-xs font-black text-indigo-600 transition-colors hover:bg-indigo-100"
                         >
-                            <Pencil className="h-4 w-4" /> Edit
+                            <Pencil className="h-4 w-4" /> Edit Supplier
                         </button>
-                        <button onClick={onClose} aria-label="Tutup" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100">
+                        <button onClick={onClose} aria-label="Tutup" className="rounded-2xl p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors">
                             <X className="h-5 w-5" />
                         </button>
                     </div>
                 </div>
 
-                {/* Kontak */}
-                <div className="flex flex-wrap gap-2">
+                {/* Tombol Kontak Cepat */}
+                <div className="flex flex-wrap gap-2.5">
                     {supplier.phone && (
                         <a
                             href={`tel:${supplier.phone.replace(/[^\d+]/g, '')}`}
-                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium hover:bg-slate-50"
+                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 shadow-sm transition-all hover:bg-slate-50"
                         >
-                            <Phone className="h-4 w-4" /> Telepon
+                            <Phone className="h-4 w-4 text-indigo-600" /> Panggil Telepon
                         </a>
                     )}
                     {wa && (
@@ -91,17 +99,18 @@ export default function SupplierDetail({ supplier, products, onClose, onEdit }) 
                             href={wa}
                             target="_blank"
                             rel="noopener"
-                            className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-700"
                         >
-                            <MessageCircle className="h-4 w-4" /> WhatsApp
+                            <MessageCircle className="h-4 w-4" /> Chat WhatsApp
                         </a>
                     )}
                 </div>
 
-                <div className="space-y-2">
+                {/* Informasi Detail */}
+                <div className="grid gap-2.5 sm:grid-cols-2">
                     {supplier.contact_person && <Info icon={User}>{supplier.contact_person}</Info>}
                     {supplier.phone && <Info icon={Phone}>{supplier.phone}</Info>}
-                    {supplier.address && <Info icon={MapPin}>{supplier.address}</Info>}
+                    {supplier.address && <div className="sm:col-span-2"><Info icon={MapPin}>{supplier.address}</Info></div>}
                     <Info icon={Wallet}>
                         {TERM_LABEL[supplier.payment_terms]}
                         {supplier.bank_account ? ` · ${supplier.bank_account}` : ''}
@@ -113,65 +122,71 @@ export default function SupplierDetail({ supplier, products, onClose, onEdit }) 
                             {supplier.min_order ? `Min. order ${supplier.min_order}` : ''}
                         </Info>
                     )}
-                    {supplier.notes && (
-                        <p className="rounded-xl bg-amber-50 px-4 py-2 text-sm text-amber-800">{supplier.notes}</p>
-                    )}
                 </div>
+
+                {supplier.notes && (
+                    <p className="rounded-2xl bg-amber-50 border border-amber-100 px-4 py-3 text-xs font-bold text-amber-800">
+                        💡 Catatan: {supplier.notes}
+                    </p>
+                )}
 
                 {supplier.card_url && (
                     <div>
-                        <div className="mb-1 text-sm font-medium text-slate-600">Kartu nama</div>
+                        <div className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Kartu Nama Supplier</div>
                         <a href={supplier.card_url} target="_blank" rel="noopener">
                             <img
                                 src={supplier.card_url}
                                 alt={`Kartu nama ${supplier.name}`}
-                                className="max-h-56 rounded-xl border border-slate-200 object-contain"
+                                className="max-h-48 w-full rounded-2xl border border-slate-200 object-cover shadow-sm transition-transform hover:scale-[1.01]"
                             />
                         </a>
-                        <p className="mt-1 text-xs text-slate-400">Klik gambar untuk memperbesar.</p>
+                        <p className="mt-1 text-[11px] font-bold text-slate-400">Klik gambar untuk memperbesar pratinjau.</p>
                     </div>
                 )}
 
-                {/* Daftar harga */}
-                <div>
-                    <div className="mb-2 text-sm font-semibold">Harga produk</div>
+                {/* Daftar Harga Produk */}
+                <div className="space-y-3">
+                    <div className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center justify-between">
+                        <span>Daftar Harga Produk Kulakan</span>
+                        <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-indigo-600">{prices.length} Produk</span>
+                    </div>
 
                     {prices.length === 0 ? (
-                        <p className="rounded-xl bg-slate-50 px-4 py-4 text-center text-sm text-slate-400">
-                            Belum ada harga yang dicatat.
+                        <p className="rounded-2xl bg-slate-50 border border-slate-100 px-4 py-6 text-center text-xs font-bold text-slate-400">
+                            Belum ada harga produk yang dicatat untuk supplier ini.
                         </p>
                     ) : (
-                        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+                        <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
                             {prices.map((p) => {
                                 const changed = p.previous_price !== null && p.previous_price !== p.price;
                                 const up = changed && p.price > p.previous_price;
 
                                 return (
-                                    <li key={p.id} className="flex items-center gap-3 px-4 py-3">
+                                    <li key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/80 transition-colors">
                                         <div className="min-w-0 flex-1">
-                                            <div className="truncate text-sm font-medium">{p.product?.name ?? '-'}</div>
-                                            <div className="text-xs text-slate-400">
-                                                <span className="font-mono">{p.product?.sku}</span>
+                                            <div className="truncate text-xs font-black text-slate-800">{p.product?.name ?? '-'}</div>
+                                            <div className="text-[11px] font-bold text-slate-400 mt-0.5">
+                                                <span className="font-mono text-slate-600">{p.product?.sku}</span>
                                                 {p.note ? ` · ${p.note}` : ''} · {new Date(p.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className="text-sm font-semibold">
+                                            <div className="text-xs font-black text-slate-900">
                                                 {rp(p.price)}
-                                                <span className="text-xs font-normal text-slate-400"> / {p.product?.unit}</span>
+                                                <span className="font-normal text-slate-400"> / {p.product?.unit}</span>
                                             </div>
                                             {changed && (
-                                                <div className={'inline-flex items-center gap-0.5 text-xs ' + (up ? 'text-red-500' : 'text-emerald-600')}>
+                                                <div className={'inline-flex items-center gap-0.5 text-[10px] font-bold ' + (up ? 'text-rose-600' : 'text-emerald-600')}>
                                                     {up ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                                                     dari {rp(p.previous_price)}
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex shrink-0">
-                                            <button onClick={() => editPrice(p)} aria-label="Ubah harga" className="rounded-lg p-2 text-blue-600 hover:bg-blue-50">
+                                        <div className="flex shrink-0 gap-1">
+                                            <button onClick={() => editPrice(p)} aria-label="Ubah harga" className="rounded-xl p-2 text-indigo-600 hover:bg-indigo-50 transition-colors">
                                                 <Pencil className="h-4 w-4" />
                                             </button>
-                                            <button onClick={() => removePrice(p)} aria-label="Hapus harga" className="rounded-lg p-2 text-red-500 hover:bg-red-50">
+                                            <button onClick={() => removePrice(p)} aria-label="Hapus harga" className="rounded-xl p-2 text-rose-500 hover:bg-rose-50 transition-colors">
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
                                         </div>
@@ -181,12 +196,12 @@ export default function SupplierDetail({ supplier, products, onClose, onEdit }) 
                         </ul>
                     )}
 
-                    {/* Tambah / ubah harga */}
-                    <form onSubmit={savePrice} className="mt-3 grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-6">
+                    {/* Form Tambah / Ubah Harga */}
+                    <form onSubmit={savePrice} className="mt-3 grid gap-2.5 rounded-2xl bg-slate-50 border border-slate-200 p-4 sm:grid-cols-6 shadow-inner">
                         <select
                             value={priceForm.data.product_id}
                             onChange={(e) => pickProduct(e.target.value)}
-                            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400 sm:col-span-3"
+                            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500 sm:col-span-3 shadow-sm"
                         >
                             <option value="">Pilih produk...</option>
                             {products.map((p) => (
@@ -201,77 +216,78 @@ export default function SupplierDetail({ supplier, products, onClose, onEdit }) 
                             placeholder="Harga beli"
                             value={priceForm.data.price}
                             onChange={(e) => priceForm.setData('price', e.target.value)}
-                            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400 sm:col-span-2"
+                            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500 sm:col-span-2 shadow-sm placeholder:font-normal placeholder:text-slate-400"
                         />
                         <button
                             disabled={priceForm.processing || !priceForm.data.product_id || priceForm.data.price === ''}
-                            className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-40"
+                            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-black text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 disabled:opacity-40 transition-all"
                         >
-                            Simpan
+                            <Save className="h-4 w-4" /> Simpan
                         </button>
                         <input
                             placeholder="Keterangan (opsional), mis. harga grosir"
                             value={priceForm.data.note}
                             onChange={(e) => priceForm.setData('note', e.target.value)}
-                            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-orange-400 sm:col-span-6"
+                            className="rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500 sm:col-span-6 shadow-sm placeholder:font-normal placeholder:text-slate-400"
                         />
                         {(priceForm.errors.product_id || priceForm.errors.price) && (
-                            <p className="text-xs text-red-600 sm:col-span-6">
-                                {priceForm.errors.product_id || priceForm.errors.price}
+                            <p className="text-xs font-extrabold text-rose-600 sm:col-span-6">
+                                ⚠️ {priceForm.errors.product_id || priceForm.errors.price}
                             </p>
                         )}
                     </form>
-                    <p className="mt-1 text-xs text-slate-400">
-                        Memilih produk yang sudah ada harganya akan mengubah harganya. Harga lama tercatat sebagai pembanding.
+                    <p className="text-[11px] font-bold text-slate-400">
+                        Memilih produk yang sudah tercatat harganya akan otomatis memperbarui nilainya. Riwayat harga lama akan disimpan sebagai pembanding.
                     </p>
                 </div>
-                {/* Riwayat pembelian */}
-                <div>
-                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                        <div className="text-sm font-semibold">Riwayat pembelian</div>
+
+                {/* Riwayat Pembelian */}
+                <div className="space-y-3 pt-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4">
+                        <div className="text-xs font-black uppercase tracking-wider text-slate-600">Riwayat Pembelian Kulakan</div>
                         {supplier.purchase_stats && (
-                            <div className="text-xs text-slate-500">
-                                {supplier.purchase_stats.count}x kulakan · total {rp(supplier.purchase_stats.total)}
+                            <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 border border-emerald-100">
+                                {supplier.purchase_stats.count}x Kulakan &bull; Total {rp(supplier.purchase_stats.total)}
                             </div>
                         )}
                     </div>
 
                     {(supplier.purchases ?? []).length === 0 ? (
-                        <p className="rounded-xl bg-slate-50 px-4 py-4 text-center text-sm text-slate-400">
-                            Belum ada pembelian. Pilih supplier ini saat mencatat Stok masuk di halaman Produk.
+                        <p className="rounded-2xl bg-slate-50 border border-slate-100 px-4 py-6 text-center text-xs font-bold text-slate-400">
+                            Belum ada riwayat pembelian. Pilih supplier ini saat mencatat Stok Masuk di halaman Produk.
                         </p>
                     ) : (
-                        <div className="overflow-x-auto rounded-xl border border-slate-100">
-                            <table className="w-full min-w-[520px] text-left text-sm">
+                        <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
+                            <table className="w-full min-w-[520px] text-left text-xs">
                                 <thead>
-                                    <tr className="border-b border-slate-100 text-xs text-slate-400">
-                                        <th className="px-3 py-2 font-medium">Tanggal</th>
-                                        <th className="px-3 py-2 font-medium">Produk</th>
-                                        <th className="px-3 py-2 text-right font-medium">Jumlah</th>
-                                        <th className="px-3 py-2 text-right font-medium">Harga</th>
-                                        <th className="px-3 py-2 text-right font-medium">Total</th>
+                                    <tr className="border-b border-slate-100 bg-slate-50/80 font-black uppercase tracking-wider text-slate-400">
+                                        <th className="px-3.5 py-3">Tanggal</th>
+                                        <th className="px-3.5 py-3">Produk</th>
+                                        <th className="px-3.5 py-3 text-right">Jumlah</th>
+                                        <th className="px-3.5 py-3 text-right">Harga Satuan</th>
+                                        <th className="px-3.5 py-3 text-right">Total</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-50">
+                                <tbody className="divide-y divide-slate-100 font-bold text-slate-700">
                                     {supplier.purchases.map((m) => (
-                                        <tr key={m.id}>
-                                            <td className="px-3 py-2 text-slate-500">
+                                        <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
+                                            <td className="px-3.5 py-3 text-slate-500">
                                                 {new Date(m.created_at).toLocaleDateString('id-ID', {
                                                     day: 'numeric',
                                                     month: 'short',
                                                     year: 'numeric',
                                                 })}
-                                                <div className="text-xs text-slate-400">{m.user?.username ?? ''}</div>
+                                                <div className="text-[10px] font-medium text-slate-400">{m.user?.username ?? ''}</div>
                                             </td>
-                                            <td className="px-3 py-2">
-                                                <div className="font-medium">{m.product?.name}</div>
-                                                <div className="font-mono text-xs text-slate-400">{m.product?.sku}</div>
+                                            <td className="px-3.5 py-3">
+                                                <div className="font-black text-slate-800">{m.product?.name}</div>
+                                                <div className="font-mono text-[11px] text-slate-400">{m.product?.sku}</div>
                                             </td>
-                                            <td className="px-3 py-2 text-right">
+                                            <td className="px-3.5 py-3 text-right">
                                                 {num(m.qty_change)} {m.product?.unit}
                                             </td>
-                                            <td className="px-3 py-2 text-right">{m.unit_cost !== null ? rp(m.unit_cost) : '—'}</td>
-                                            <td className="px-3 py-2 text-right font-semibold">
+                                            <td className="px-3.5 py-3 text-right">{m.unit_cost !== null ? rp(m.unit_cost) : '—'}</td>
+                                            <td className="px-3.5 py-3 text-right font-black text-slate-900">
                                                 {m.unit_cost !== null ? rp(Math.round(m.qty_change * m.unit_cost)) : '—'}
                                             </td>
                                         </tr>
@@ -280,10 +296,11 @@ export default function SupplierDetail({ supplier, products, onClose, onEdit }) 
                             </table>
                         </div>
                     )}
-                    <p className="mt-1 text-xs text-slate-400">
-                        Menampilkan 30 pembelian terakhir. Total hanya menghitung pembelian yang harganya diisi.
+                    <p className="text-[11px] font-bold text-slate-400">
+                        Menampilkan 30 pembelian terakhir. Total hanya menghitung transaksi pembelian yang nominal harganya terisi.
                     </p>
                 </div>
+
             </div>
         </div>
     );

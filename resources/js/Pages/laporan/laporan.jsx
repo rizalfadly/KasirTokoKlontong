@@ -126,7 +126,7 @@ export default function Laporan({ type, value, label, summary, chart, topProduct
                             <span>Pusat Analisis Finansial Toko</span>
                         </div>
                         <h1 className="mt-2 text-2xl font-black tracking-tight md:text-3xl flex items-center gap-2">
-                            Laporan Penjualan & Kinerja 📈
+                            Laporan Penjualan
                         </h1>
                         <p className="mt-1 text-xs md:text-sm text-indigo-100/90 font-medium">
                             Menampilkan data analitik untuk periode: <b className="text-white underline">{label}</b>

@@ -1,18 +1,18 @@
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
-import { UserRoundPlus } from 'lucide-react';
+import { UserRoundPlus, Users, Shield, Sparkles, CheckCircle2, Pencil, Trash2, X, KeyRound } from 'lucide-react';
 
 const ROLE_STYLE = {
-    owner: 'bg-violet-100 text-violet-700',
-    admin: 'bg-sky-100 text-sky-700',
-    kasir: 'bg-amber-100 text-amber-800',
+    owner: 'bg-violet-100 text-violet-700 border border-violet-200',
+    admin: 'bg-sky-100 text-sky-700 border border-sky-200',
+    kasir: 'bg-amber-100 text-amber-800 border border-amber-200',
 };
 
 const inputClass =
-    'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100';
+    'w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all duration-300 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-100 shadow-sm placeholder:font-normal placeholder:text-slate-400';
 
-const card = 'rounded-2xl border border-white/70 bg-white/75 shadow-sm backdrop-blur-md';
+const card = 'rounded-3xl border border-white/80 bg-white/90 shadow-xl shadow-slate-200/50 backdrop-blur-xl';
 
 function remove(u) {
     if (confirm(`Hapus akun "${u.username}" (${u.name}) secara permanen? Tindakan ini tidak bisa diurungkan.`)) {
@@ -25,27 +25,27 @@ function remove(u) {
 
 function Field({ label, error, hint, ...props }) {
     return (
-        <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-600">{label}</span>
+        <label className="block space-y-1.5">
+            <span className="block text-xs font-black uppercase tracking-wider text-slate-600">{label}</span>
             <input {...props} className={inputClass} />
-            {hint && !error && <span className="mt-1 block text-xs text-slate-400">{hint}</span>}
-            {error && <span className="mt-1 block text-xs text-red-600">{error}</span>}
+            {hint && !error && <span className="block text-xs font-medium text-slate-400">{hint}</span>}
+            {error && <span className="block text-xs font-extrabold text-rose-600">⚠️ {error}</span>}
         </label>
     );
 }
 
 function RoleSelect({ value, onChange, roles, error }) {
     return (
-        <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-600">Peran</span>
-            <select value={value} onChange={onChange} className={inputClass + ' capitalize'}>
+        <label className="block space-y-1.5">
+            <span className="block text-xs font-black uppercase tracking-wider text-slate-600">Peran Akun</span>
+            <select value={value} onChange={onChange} className={inputClass + ' capitalize font-bold'}>
                 {roles.map((r) => (
                     <option key={r} value={r}>
                         {r}
                     </option>
                 ))}
             </select>
-            {error && <span className="mt-1 block text-xs text-red-600">{error}</span>}
+            {error && <span className="block text-xs font-extrabold text-rose-600">⚠️ {error}</span>}
         </label>
     );
 }
@@ -76,19 +76,41 @@ export default function Pengguna({ users, roles }) {
 
     return (
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
-            <Head title="Pengguna" />
+            <Head title="Manajemen Pengguna" />
 
-            <div>
-                <h1 className="text-2xl font-bold">Pengguna</h1>
-                <p className="text-sm text-slate-500">Kelola akun owner, admin, dan kasir.</p>
+            {/* Banner Full Color Supreme */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 p-6 text-white shadow-xl shadow-indigo-500/25 md:p-8">
+                <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-20 pointer-events-none">
+                    <Sparkles className="h-64 w-64 animate-spin-slow" strokeWidth={1} />
+                </div>
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold backdrop-blur-md border border-white/20 text-indigo-100">
+                            <Shield className="h-3.5 w-3.5 text-amber-300 animate-pulse" />
+                            <span>Kontrol Akses Sistem</span>
+                        </div>
+                        <h1 className="mt-2 text-2xl font-black tracking-tight md:text-3xl flex items-center gap-2">
+                            Manajemen Pengguna
+                        </h1>
+                        <p className="mt-1 text-xs md:text-sm text-indigo-100/90 font-medium">
+                            Kelola hak akses akun owner, admin, dan kasir toko secara aman dan real-time.
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            {/* Form tambah */}
-            <form onSubmit={submitAdd} className={card + ' p-5'}>
-                <h2 className="mb-4 font-semibold"> <UserRoundPlus/></h2>
-                <div className="grid gap-4 md:grid-cols-4">
+            {/* Form Tambah Akun */}
+            <form onSubmit={submitAdd} className={card + ' p-6 md:p-8 space-y-5'}>
+                <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700 shadow-sm">
+                        <UserRoundPlus className="h-5 w-5" />
+                    </div>
+                    <h2 className="text-base font-black text-slate-800">Tambah Akun Baru</h2>
+                </div>
+
+                <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
                     <Field
-                        label="Nama lengkap"
+                        label="Nama Lengkap"
                         placeholder="mis. Budi Santoso"
                         value={addForm.data.name}
                         onChange={(e) => addForm.setData('name', e.target.value)}
@@ -102,7 +124,7 @@ export default function Pengguna({ users, roles }) {
                         value={addForm.data.username}
                         onChange={(e) => addForm.setData('username', e.target.value)}
                         error={addForm.errors.username}
-                        hint="Huruf, angka, titik, strip. Peka huruf besar/kecil."
+                        hint="Huruf, angka, tanpa spasi."
                     />
                     <RoleSelect
                         roles={roles}
@@ -112,7 +134,7 @@ export default function Pengguna({ users, roles }) {
                     />
                     <div>
                         <Field
-                            label="Kata sandi"
+                            label="Kata Sandi"
                             type={showPw ? 'text' : 'password'}
                             placeholder="Minimal 8 karakter"
                             autoComplete="new-password"
@@ -123,92 +145,105 @@ export default function Pengguna({ users, roles }) {
                         <button
                             type="button"
                             onClick={() => setShowPw((s) => !s)}
-                            className="mt-1 text-xs text-slate-500 hover:text-orange-600"
+                            className="mt-1.5 text-xs font-bold text-indigo-600 hover:underline"
                         >
                             {showPw ? 'Sembunyikan' : 'Lihat kata sandi'}
                         </button>
                     </div>
                 </div>
+
                 <button
                     disabled={addForm.processing}
-                    className="mt-4 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-2.5 font-semibold text-white shadow-md shadow-orange-200 transition hover:brightness-105 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-7 py-3 text-sm font-black text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:scale-105 hover:shadow-indigo-500/40 disabled:opacity-50 disabled:scale-100"
                 >
-                    {addForm.processing ? 'Menyimpan...' : 'Tambah akun'}
+                    <UserRoundPlus className="h-4 w-4" />
+                    <span>{addForm.processing ? 'Menyimpan...' : 'Tambah Akun'}</span>
                 </button>
             </form>
 
-            {/* Daftar */}
-            <div className={card + ' p-5'}>
-                <h2 className="mb-4 font-semibold">Daftar akun ({users.length})</h2>
+            {/* Daftar Akun */}
+            <div className={card + ' p-6 md:p-8 space-y-4'}>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                        <Users className="h-5 w-5 text-indigo-600" />
+                        <span>Daftar Akun Terdaftar</span>
+                    </h2>
+                    <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600">
+                        Total: {users.length} Akun
+                    </span>
+                </div>
+
                 <div className="overflow-x-auto">
                     <table className="w-full min-w-[640px] text-left">
                         <thead>
-                            <tr className="border-b border-slate-100 text-sm text-slate-400">
-                                <th className="pb-3 font-medium">Nama</th>
-                                <th className="pb-3 font-medium">Username</th>
-                                <th className="pb-3 font-medium">Peran</th>
-                                <th className="pb-3 font-medium">Status</th>
-                                <th className="pb-3 font-medium">Transaksi</th>
-                                <th className="pb-3"></th>
+                            <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
+                                <th className="pb-3">Nama Pegawai</th>
+                                <th className="pb-3">Username</th>
+                                <th className="pb-3">Peran</th>
+                                <th className="pb-3">Status</th>
+                                <th className="pb-3">Transaksi</th>
+                                <th className="pb-3 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                             {users.map((u) => (
-                                <tr key={u.id} className="transition hover:bg-amber-50/50">
-                                    <td className="py-3">
+                                <tr key={u.id} className="transition-colors hover:bg-slate-50/80">
+                                    <td className="py-3.5">
                                         <div className="flex items-center gap-3">
-                                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 font-bold text-orange-600">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-100 font-black text-indigo-700 shadow-sm">
                                                 {(u.name || '?').charAt(0).toUpperCase()}
                                             </div>
-                                            <span className="font-medium">{u.name}</span>
+                                            <span className="font-extrabold text-slate-800 text-sm">{u.name}</span>
                                         </div>
                                     </td>
-                                    <td className="py-3 font-mono text-sm">{u.username ?? '-'}</td>
-                                    <td className="py-3">
+                                    <td className="py-3.5 font-mono text-xs font-bold text-slate-600">{u.username ?? '-'}</td>
+                                    <td className="py-3.5">
                                         <span
                                             className={
-                                                'rounded-full px-2.5 py-1 text-xs font-semibold capitalize ' +
+                                                'rounded-full px-3 py-1 text-xs font-black capitalize ' +
                                                 (ROLE_STYLE[u.role] ?? 'bg-slate-100 text-slate-600')
                                             }
                                         >
                                             {u.role}
                                         </span>
                                     </td>
-                                    <td className="py-3">
+                                    <td className="py-3.5">
                                         <span
                                             className={
-                                                'rounded-full px-2.5 py-1 text-xs font-semibold ' +
-                                                (u.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500')
+                                                'rounded-full px-3 py-1 text-xs font-black ' +
+                                                (u.is_active ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' : 'bg-slate-200 text-slate-500')
                                             }
                                         >
                                             {u.is_active ? 'Aktif' : 'Nonaktif'}
                                         </span>
                                     </td>
-                                    <td className="py-3 text-sm text-slate-500">{u.sales_count}</td>
-                                    <td className="py-3 text-right">
-                                        <button
-                                            onClick={() => openEdit(u)}
-                                            className="rounded-lg px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50"
-                                        >
-                                            Edit
-                                        </button>
-                                        {!u.is_active && u.id !== auth?.user?.id && (
-                                            u.sales_count === 0 ? (
-                                                <button
-                                                    onClick={() => remove(u)}
-                                                    className="rounded-lg px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                                                >
-                                                    Hapus
-                                                </button>
-                                            ) : (
-                                                <span
-                                                    title="Punya riwayat transaksi, jadi hanya bisa dinonaktifkan"
-                                                    className="px-3 text-xs text-slate-400"
-                                                >
-                                                    Ada transaksi
-                                                </span>
-                                            )
-                                        )}
+                                    <td className="py-3.5 text-xs font-bold text-slate-600">{u.sales_count} Nota</td>
+                                    <td className="py-3.5 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => openEdit(u)}
+                                                className="inline-flex items-center gap-1 rounded-xl bg-indigo-50 px-3 py-1.5 text-xs font-extrabold text-indigo-600 transition-colors hover:bg-indigo-100"
+                                            >
+                                                <Pencil className="h-3.5 w-3.5" /> Edit
+                                            </button>
+                                            {!u.is_active && u.id !== auth?.user?.id && (
+                                                u.sales_count === 0 ? (
+                                                    <button
+                                                        onClick={() => remove(u)}
+                                                        className="inline-flex items-center gap-1 rounded-xl bg-rose-50 px-3 py-1.5 text-xs font-extrabold text-rose-600 transition-colors hover:bg-rose-100"
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" /> Hapus
+                                                    </button>
+                                                ) : (
+                                                    <span
+                                                        title="Punya riwayat transaksi, jadi hanya bisa dinonaktifkan"
+                                                        className="text-[11px] font-bold text-slate-400 px-2"
+                                                    >
+                                                        Ada transaksi
+                                                    </span>
+                                                )
+                                            )}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -217,19 +252,32 @@ export default function Pengguna({ users, roles }) {
                 </div>
             </div>
 
-            {/* Pop-up edit */}
+            {/* Modal Pop-up Edit Akun */}
             {editing && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                    <form onSubmit={submitEdit} className="w-full max-w-md space-y-4 rounded-3xl bg-white p-6 shadow-2xl">
-                        <div>
-                            <h2 className="text-lg font-bold">✏️ Edit akun</h2>
-                            <p className="text-sm text-slate-500">
-                                Username: <span className="font-mono font-semibold">{editing.username}</span>
-                            </p>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-300">
+                    <form onSubmit={submitEdit} className="w-full max-w-md space-y-5 rounded-3xl bg-white p-6 md:p-8 shadow-2xl">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
+                                    <KeyRound className="h-4 w-4" />
+                                </div>
+                                <h2 className="text-base font-black text-slate-800">Edit Akun Pengguna</h2>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setEditing(null)}
+                                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
                         </div>
 
+                        <p className="text-xs font-bold text-slate-500">
+                            Username: <span className="font-mono font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">{editing.username}</span>
+                        </p>
+
                         <Field
-                            label="Nama lengkap"
+                            label="Nama Lengkap"
                             value={editForm.data.name}
                             onChange={(e) => editForm.setData('name', e.target.value)}
                             error={editForm.errors.name}
@@ -241,38 +289,39 @@ export default function Pengguna({ users, roles }) {
                             error={editForm.errors.role}
                         />
                         <Field
-                            label="Kata sandi baru"
+                            label="Kata Sandi Baru"
                             type="text"
                             placeholder="Kosongkan jika tidak diubah"
                             autoComplete="off"
                             value={editForm.data.password}
                             onChange={(e) => editForm.setData('password', e.target.value)}
                             error={editForm.errors.password}
-                            hint="Minimal 8 karakter. Isi untuk mereset kata sandi."
+                            hint="Minimal 8 karakter. Isi hanya untuk mereset sandi."
                         />
-                        <label className="flex items-center gap-2 text-sm text-slate-600">
+                        
+                        <label className="flex items-center gap-2.5 text-xs font-bold text-slate-700 cursor-pointer pt-1">
                             <input
                                 type="checkbox"
                                 checked={editForm.data.is_active}
                                 onChange={(e) => editForm.setData('is_active', e.target.checked)}
-                                className="h-4 w-4 rounded border-slate-300 accent-orange-500"
+                                className="h-4 w-4 rounded border-slate-300 accent-indigo-600"
                             />
-                            Akun aktif (bisa login)
+                            <span>Akun aktif (diizinkan masuk sistem kasir)</span>
                         </label>
 
-                        <div className="flex gap-3 pt-2">
+                        <div className="flex gap-3 pt-3">
                             <button
                                 type="button"
                                 onClick={() => setEditing(null)}
-                                className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
+                                className="flex-1 rounded-2xl border border-slate-200 py-3 text-xs font-black text-slate-600 hover:bg-slate-50 transition-colors"
                             >
                                 Batal
                             </button>
                             <button
                                 disabled={editForm.processing}
-                                className="flex-1 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 py-2.5 font-semibold text-white disabled:opacity-50"
+                                className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3 text-xs font-black text-white shadow-lg shadow-indigo-500/25 transition-all hover:scale-[1.02] disabled:opacity-50"
                             >
-                                Simpan
+                                {editForm.processing ? 'Menyimpan...' : 'Simpan Perubahan'}
                             </button>
                         </div>
                     </form>

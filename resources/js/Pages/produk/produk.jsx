@@ -135,7 +135,7 @@ export default function ProdukIndex({
                             <span>Katalog & Inventaris Toko</span>
                         </div>
                         <h1 className="mt-2 text-2xl font-black tracking-tight md:text-3xl flex items-center gap-2">
-                            Manajemen Produk & Harga 🏷️
+                            Manajemen Produk & Harga 
                         </h1>
                         <p className="mt-1 text-xs md:text-sm text-indigo-100/90 font-medium">
                             Kelola daftar produk, SKU, harga jual, harga grosir, dan satuan barang.
