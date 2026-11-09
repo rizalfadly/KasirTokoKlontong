@@ -128,7 +128,7 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
             </div>
 
             {/* Layout Utama POS: Responsif untuk HP, iPad, & Desktop */}
-            <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3">
+            <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-3 items-start">
                 
                 {/* Bagian Produk & Pencarian */}
                 <div className="order-2 lg:order-1 lg:col-span-2">
@@ -145,17 +145,23 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                     </div>
                 </div>
 
-                {/* Bagian Keranjang & Panel Pembayaran */}
-                <section className="order-1 lg:order-2 self-start rounded-2xl md:rounded-3xl border border-slate-100 bg-white/90 p-4 md:p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl lg:sticky lg:top-6 space-y-4 md:space-y-6">
-                    <CartList
-                        cart={cart}
-                        setQty={setQty}
-                        onClear={clear}
-                        isDec={isDec}
-                        stepOf={stepOf}
-                        lineTotal={lineTotal}
-                    />
-                    <div className="border-t border-slate-100 pt-4 md:pt-5">
+                {/* Bagian Keranjang & Panel Pembayaran (Dibuat Sticky dan Fleksibel) */}
+                <section className="order-1 lg:order-2 rounded-2xl md:rounded-3xl border border-slate-100 bg-white/90 p-4 md:p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl lg:sticky lg:top-6 flex flex-col max-h-[calc(100vh-3rem)] justify-between">
+                    
+                    {/* Area Keranjang yang bisa di-scroll sendiri jika itemnya banyak */}
+                    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto pr-1">
+                        <CartList
+                            cart={cart}
+                            setQty={setQty}
+                            onClear={clear}
+                            isDec={isDec}
+                            stepOf={stepOf}
+                            lineTotal={lineTotal}
+                        />
+                    </div>
+
+                    {/* Panel Pembayaran (Selalu nempel rapi di bawah dan tidak akan pernah tertutup) */}
+                    <div className="shrink-0 border-t border-slate-100 pt-3 mt-3">
                         <PaymentPanel
                             total={total}
                             count={cart.length}

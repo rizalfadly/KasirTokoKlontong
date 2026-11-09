@@ -6,9 +6,9 @@ export default function CartList({ cart, orders, setQty, onClear, isDec, stepOf,
     const [tick, setTick] = useState(0);
 
     return (
-        <div className="space-y-3 flex flex-col min-h-0">
+        <div className="space-y-3">
             {/* Header Keranjang (Dibuat Lebih Ramping) */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5 shrink-0">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <h2 className="flex items-center gap-2 text-sm font-black text-slate-800">
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 shadow-sm">
                         <ShoppingCart className="h-4 w-4" />
@@ -38,8 +38,8 @@ export default function CartList({ cart, orders, setQty, onClear, isDec, stepOf,
                     <p className="text-[11px] text-slate-400 mt-0.5 max-w-[180px]">Pilih atau scan produk untuk transaksi.</p>
                 </div>
             ) : (
-                /* Diubah dari max-h-64 menjadi max-h-[35vh] dengan overflow-y-auto agar list item bisa digulir mandiri */
-                <ul className="max-h-[35vh] space-y-2.5 overflow-y-auto pr-1">
+                /* Diperluas max-h-[48vh] agar muat menampilkan banyak item sekaligus (sekitar 8-10 produk) */
+                <ul className="max-h-[48vh] space-y-2.5 overflow-y-auto pr-1">
                     {cart.map((i) => (
                         <li key={i.id} className="group rounded-xl border border-slate-100 bg-white p-3 shadow-sm transition-all duration-300 hover:border-indigo-200 hover:shadow-md">
                             <div className="flex items-start justify-between gap-2">
