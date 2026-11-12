@@ -12,6 +12,7 @@ const TONES = {
 
 export function DialogProvider({ children }) {
     const [dlg, setDlg] = useState(null);
+    const [isVisible, setIsVisible] = useState(false);
     const resolver = useRef(null);
 
     const open = useCallback(
@@ -19,21 +20,25 @@ export function DialogProvider({ children }) {
             new Promise((resolve) => {
                 resolver.current = resolve;
                 setDlg(opts);
+                // Gunakan setTimeout kecil agar React sempat merender elemen dalam posisi awal (opacity 0) 
+                // sebelum diubah ke true untuk memicu animasi transisi CSS.
+                setTimeout(() => setIsVisible(true), 10);
             }),
         [],
     );
 
     const close = (result) => {
-        resolver.current?.(result);
-        resolver.current = null;
-        setDlg(null);
+        setIsVisible(false); // Picu animasi keluar
+        setTimeout(() => {
+            resolver.current?.(result);
+            resolver.current = null;
+            setDlg(null);
+        }, 200); // Harus sinkron dengan durasi transition (200ms)
     };
 
     const api = {
-        // await dialog.alert('Pesan', { title, tone })
         alert: (message, o = {}) =>
             open({ kind: 'alert', message, title: o.title ?? 'Pemberitahuan', tone: o.tone ?? 'info', okText: o.okText ?? 'OK' }),
-        // if (await dialog.confirm('Hapus produk?', { tone: 'danger' })) { ... }
         confirm: (message, o = {}) =>
             open({
                 kind: 'confirm',
@@ -61,14 +66,27 @@ export function DialogProvider({ children }) {
             {children}
 
             {dlg && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4 print:hidden">
-                    <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 print:hidden">
+                    {/* Backdrop dengan animasi fade */}
+                    <div 
+                        className={`absolute inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity duration-200 ease-out ${
+                            isVisible ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        onClick={() => close(dlg.kind === 'confirm' ? false : true)}
+                    />
+
+                    {/* Kotak Dialog dengan animasi scale & fade */}
+                    <div 
+                        className={`relative w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl transition-all duration-200 ease-out ${
+                            isVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'
+                        }`}
+                    >
                         <div className="flex items-start gap-3">
                             <div className={'flex h-10 w-10 shrink-0 items-center justify-center rounded-full ' + tone.box}>
                                 <tone.icon className="h-5 w-5" />
                             </div>
                             <div className="min-w-0">
-                                <h2 className="font-bold">{dlg.title}</h2>
+                                <h2 className="font-bold text-slate-900">{dlg.title}</h2>
                                 <p className="mt-1 whitespace-pre-line text-sm text-slate-600">{dlg.message}</p>
                             </div>
                         </div>
@@ -77,7 +95,7 @@ export function DialogProvider({ children }) {
                             {dlg.kind === 'confirm' && (
                                 <button
                                     onClick={() => close(false)}
-                                    className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50"
+                                    className="flex-1 rounded-xl border border-slate-200 py-2.5 font-medium text-slate-600 hover:bg-slate-50 active:scale-[0.98] transition-transform"
                                 >
                                     {dlg.cancelText}
                                 </button>
@@ -85,7 +103,7 @@ export function DialogProvider({ children }) {
                             <button
                                 autoFocus
                                 onClick={() => close(true)}
-                                className={'flex-1 rounded-xl py-2.5 font-semibold text-white ' + tone.btn}
+                                className={'flex-1 rounded-xl py-2.5 font-semibold text-white active:scale-[0.98] transition-transform ' + tone.btn}
                             >
                                 {dlg.okText}
                             </button>
