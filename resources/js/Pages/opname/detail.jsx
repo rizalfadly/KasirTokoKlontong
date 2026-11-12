@@ -2,6 +2,8 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num } from '../../lib/format';
+import { useDialog } from '../../Components/Dialog';
+
 import {
     ArrowLeft, Send, Undo2, CheckCircle2, Printer, Download,
     Search, Calculator, Check, Sparkles, AlertTriangle, ShieldCheck, ClipboardCheck
@@ -45,6 +47,7 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
     const isOwner = auth?.user?.role === 'owner';
     const draft = opname.status === 'draft';
     const canCount = draft && !isOwner;
+    const dialog = useDialog();
 
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('semua');
@@ -127,16 +130,20 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
             ...extra,
         });
 
-    function sendToOwner() {
-        if (confirm(`Kirim hasil hitungan (${counted.length} produk) ke owner?\n\nSetelah dikirim, hitungan tidak bisa diubah kecuali dikembalikan oleh owner.`)) {
-            act('kirim');
-        }
+    async function sendToOwner() {
+        const ok = await dialog.confirm(
+            `Kirim hasil hitungan (${counted.length} produk) ke owner?\n\nSetelah dikirim, hitungan tidak bisa diubah kecuali dikembalikan oleh owner.`,
+            { title: 'Kirim ke owner', okText: 'Ya, kirim' },
+        );
+        if (ok) act('kirim');
     }
 
-    function approve() {
-        if (confirm('Setujui opname ini?\n\nSelisih akan otomatis dicatat di Buku Stok dan stok sistem disesuaikan. Tindakan ini tidak bisa diurungkan.')) {
-            act('setujui');
-        }
+    async function approve() {
+        const ok = await dialog.confirm(
+            'Selisih akan otomatis dicatat di Buku Stok dan stok sistem disesuaikan. Tindakan ini tidak bisa diurungkan.',
+            { title: 'Setujui opname', tone: 'success', okText: 'Ya, setujui' },
+        );
+        if (ok) act('setujui');
     }
 
     function giveBack(e) {
@@ -149,10 +156,12 @@ export default function OpnameDetail({ opname, rows, uncounted, decimalUnits = [
         });
     }
 
-    function remove() {
-        if (confirm('Hapus opname ini? Semua hasil hitungnya ikut terhapus dan stok sistem tidak berubah.')) {
-            router.delete(`/opname/${opname.id}`);
-        }
+    async function remove() {
+        const ok = await dialog.confirm(
+            'Semua hasil hitungnya ikut terhapus dan stok sistem tidak berubah.',
+            { title: 'Hapus opname', tone: 'danger', okText: 'Ya, hapus' },
+        );
+        if (ok) router.delete(`/opname/${opname.id}`);
     }
 
     const [statusLabel, statusStyle] = STATUS[opname.status] ?? [opname.status, 'bg-slate-100 text-slate-600 border border-slate-200'];

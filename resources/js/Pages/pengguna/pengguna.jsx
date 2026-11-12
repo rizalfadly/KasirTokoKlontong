@@ -2,6 +2,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { UserRoundPlus, Users, Shield, Sparkles, CheckCircle2, Pencil, Trash2, X, KeyRound } from 'lucide-react';
+import { useDialog } from '../../Components/Dialog';
 
 const ROLE_STYLE = {
     owner: 'bg-violet-100 text-violet-700 border border-violet-200',
@@ -14,14 +15,6 @@ const inputClass =
 
 const card = 'rounded-3xl border border-white/80 bg-white/90 shadow-xl shadow-slate-200/50 backdrop-blur-xl';
 
-function remove(u) {
-    if (confirm(`Hapus akun "${u.username}" (${u.name}) secara permanen? Tindakan ini tidak bisa diurungkan.`)) {
-        router.delete(`/pengguna/${u.id}`, {
-            preserveScroll: true,
-            onError: (e) => alert(e.delete ?? 'Gagal menghapus akun.'),
-        });
-    }
-}
 
 function Field({ label, error, hint, ...props }) {
     return (
@@ -57,6 +50,29 @@ export default function Pengguna({ users, roles }) {
 
     const addForm = useForm({ name: '', username: '', role: 'kasir', password: '' });
     const editForm = useForm({ name: '', role: 'kasir', is_active: true, password: '' });
+    const dialog = useDialog();
+
+    async function remove(u) {
+        const ok = await dialog.confirm(
+            `Hapus akun "${u.username}" (${u.name}) secara permanen?\nTindakan ini tidak bisa diurungkan.`,
+            { title: 'Hapus akun', tone: 'danger', okText: 'Ya, hapus' },
+        );
+        if (!ok) return;
+
+        router.delete(`/pengguna/${u.id}`, {
+            preserveScroll: true,
+            onError: async (e) => {
+                const msg = e.delete ?? 'Gagal menghapus akun.';
+                const goEdit = await dialog.confirm(msg, {
+                    title: 'Tidak bisa dihapus',
+                    tone: 'danger',
+                    okText: 'Buka Edit',
+                    cancelText: 'Tutup',
+                });
+                if (goEdit) openEdit(u);
+            },
+        });
+    }
 
     function submitAdd(e) {
         e.preventDefault();

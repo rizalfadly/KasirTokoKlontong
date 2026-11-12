@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ArrowLeft, Printer, Banknote, QrCode, Landmark, ShoppingBag, Ban, Send, Sparkles, Calculator, ShieldCheck, Users } from 'lucide-react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num, rp } from '../../lib/format';
+import { useDialog } from '../../Components/Dialog';
 
 const METHODS = [
     { key: 'tunai', label: 'Tunai', icon: Banknote, color: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
@@ -33,6 +34,7 @@ export default function Rekap({
     const [note, setNote] = useState('');
     const [sending, setSending] = useState(false);
     const [err, setErr] = useState('');
+    const dialog = useDialog(); 
 
     const tunai = byMethod.tunai?.total ?? 0;
     const showLaci = !isGrosir || tunai > 0;
@@ -41,8 +43,11 @@ export default function Rekap({
     const selisih = Number(fisik || 0) - seharusnya;
     const readyToSend = !sending && count > 0 && (showLaci ? fisik !== '' : true);
 
-    function kirim() {
-        if (!confirm('Kirim rekap setoran ini ke owner? Angka akan dikunci.')) return;
+    async function kirim() {
+        const ok = await dialog.confirm('Angka akan dikunci setelah dikirim.', {
+            title: 'Kirim rekap setoran ke owner?', okText: 'Ya, kirim',
+        });
+        if (!ok) return;
         router.post(
             '/setoran',
             {

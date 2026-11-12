@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import KasirLayout from '../../Layouts/KasirLayout';
 import { num, rp } from '../../lib/format';
+import { useDialog } from '../../Components/Dialog';
 
 const METHODS = [
     { key: 'tunai', label: 'Tunai', icon: Banknote, color: 'bg-emerald-100 text-emerald-700 border border-emerald-200' },
@@ -50,6 +51,7 @@ export default function SetoranDetail({ closing: c }) {
 
     const jenis = isGrosir ? 'Grosir' : 'Shift';
     const pengirim = isGrosir ? 'Admin' : 'Kasir';
+    const dialog = useDialog(); 
 
     function resubmit(e) {
         e.preventDefault();
@@ -64,10 +66,12 @@ export default function SetoranDetail({ closing: c }) {
         );
     }
 
-    function approve() {
-        if (confirm(`Setujui setoran ${jenis.toLowerCase()} ini? Saldo akhir akan diverifikasi.`)) {
-            router.post(`/setoran/${c.id}/setujui`, {}, { preserveScroll: true });
-        }
+    async function approve() {
+        const ok = await dialog.confirm(
+            `Setujui setoran ${jenis.toLowerCase()} ini? Saldo akhir akan diverifikasi.`,
+            { title: 'Setujui setoran', tone: 'success', okText: 'Ya, setujui' },
+        );
+        if (ok) router.post(`/setoran/${c.id}/setujui`, {}, { preserveScroll: true });
     }
 
     function giveBack(e) {

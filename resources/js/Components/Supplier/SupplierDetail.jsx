@@ -2,6 +2,7 @@ import { router, useForm } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, Clock, MapPin, MessageCircle, Pencil, Phone, Trash2, User, Wallet, X, Building2, Save } from 'lucide-react';
 import { TERM_LABEL, TYPE_LABEL, TYPE_STYLE, waLink } from './constants';
 import { num, rp } from '../../lib/format';
+import { useDialog } from '../../Components/Dialog';
 
 function Info({ icon: Icon, children }) {
     return (
@@ -17,6 +18,7 @@ function Info({ icon: Icon, children }) {
 export default function SupplierDetail({ supplier, products, onClose, onEdit }) {
     const priceForm = useForm({ product_id: '', price: '', note: '' });
     const wa = waLink(supplier.whatsapp);
+    const dialog = useDialog();
 
     function pickProduct(id) {
         const existing = supplier.prices.find((p) => String(p.product_id) === id);
@@ -39,8 +41,9 @@ export default function SupplierDetail({ supplier, products, onClose, onEdit }) 
         });
     }
 
-    function removePrice(p) {
-        if (confirm(`Hapus harga ${p.product?.name ?? 'produk'} dari ${supplier.name}?`)) {
+    async function removePrice(p) {
+        if (await dialog.confirm(`Hapus harga ${p.product?.name ?? 'produk'} dari ${supplier.name}?`, {
+            title: 'Hapus harga', tone: 'danger', okText: 'Ya, hapus', })) {
             router.delete(`/supplier/${supplier.id}/harga/${p.product_id}`, { preserveScroll: true });
         }
     }

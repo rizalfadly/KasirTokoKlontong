@@ -7,6 +7,7 @@ import MobileNav from '../Components/Layout/MobileNav';
 import NotificationBell from '../Components/Layout/NotificationBell';
 import Sidebar from '../Components/Layout/Sidebar';
 import { menuFor } from '../Components/Layout/menu';
+import { DialogProvider } from '../Components/Dialog';
 
 const shell =
     'relative isolate min-h-screen bg-gradient-to-br from-indigo-50/60 via-slate-50 to-orange-50/60 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white';
@@ -41,6 +42,7 @@ export default function KasirLayout({ children }) {
     const canNotify = ['owner', 'admin', 'kasir'].includes(user.role);
 
     return (
+        <DialogProvider>
         <div className={shell}>
             <Background />
             
@@ -81,5 +83,6 @@ export default function KasirLayout({ children }) {
 
             <MobileNav user={user} sections={sections} />
         </div>
+    </DialogProvider>
     );
 }

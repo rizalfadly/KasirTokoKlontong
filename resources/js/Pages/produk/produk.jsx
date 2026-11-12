@@ -5,6 +5,7 @@ import KasirLayout from '../../Layouts/KasirLayout';
 import ProductImageField from '../../Components/ProductImageField';
 import { Plus, Search, Package, PackagePlus, Pencil, Trash2, Sparkles, X, CheckCircle2 } from 'lucide-react';
 import MarginHint from '../../Components/MarginHint';
+import { useDialog } from '../../Components/Dialog';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -59,6 +60,7 @@ export default function ProdukIndex({
     const { auth } = usePage().props;
     const isOwner = auth?.user?.role === 'owner';
     const [stockFor, setStockFor] = useState(null);
+    const dialog = useDialog();
 
     const addForm = useForm({
         name: '', sku: '', barcode: '', price: '', stock: '', cost_price: '',
@@ -115,8 +117,11 @@ export default function ProdukIndex({
         });
     }
 
-    function remove(p) {
-        if (confirm(`Hapus produk "${p.name}" dari sistem?`)) router.delete(`/produk/${p.id}`, { preserveScroll: true });
+    async function remove(p) {
+        const ok = await dialog.confirm(`Hapus produk "${p.name}" dari sistem?`, {
+            title: 'Hapus produk', tone: 'danger', okText: 'Ya, hapus',
+        });
+        if (ok) router.delete(`/produk/${p.id}`, { preserveScroll: true });
     }
 
     return (
