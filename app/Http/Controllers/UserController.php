@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sale;
+use App\Models\StockMovement;
+use App\Models\StockOpname;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
-use App\Models\Sale;
-use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -87,23 +89,23 @@ class UserController extends Controller
 
     public function destroy(Request $request, User $user)
     {
-        if ($user->id === $request->user()->id) {
-            return back()->withErrors(['delete' => 'Akun yang sedang dipakai tidak bisa dihapus.']);
-        }
+        // Tidak boleh menghapus akun sendiri
+        abort_if($user->id === $request->user()->id, 403);
 
-        if ($user->is_active) {
-            return back()->withErrors(['delete' => 'Nonaktifkan akun ini dulu sebelum menghapus.']);
-        }
+        // Akun yang punya jejak apa pun tidak dihapus, supaya riwayat tetap bisa ditelusuri
+        $hasHistory = $user->sales()->exists()
+            || Sale::where('voided_by', $user->id)->exists()
+            || StockOpname::where('created_by', $user->id)->orWhere('approved_by', $user->id)->exists()
+            || StockMovement::where('user_id', $user->id)->exists();
 
-        if ($user->sales()->exists() || Sale::where('voided_by', $user->id)->exists()) {
+        if ($hasHistory) {
             return back()->withErrors([
-                'delete' => 'Akun ini punya riwayat transaksi, jadi tidak bisa dihapus. Biarkan nonaktif.',
+                'delete' => 'Akun ini sudah punya riwayat (transaksi, stok, atau opname), jadi tidak bisa dihapus. Nonaktifkan saja lewat Edit.',
             ]);
         }
 
         DB::transaction(function () use ($user) {
-            // Hapus sesi login yang tersisa (hanya relevan jika SESSION_DRIVER=database)
-            DB::table('sessions')->where('user_id', $user->id)->delete();
+            $user->notifications()->delete();
             $user->delete();
         });
 
