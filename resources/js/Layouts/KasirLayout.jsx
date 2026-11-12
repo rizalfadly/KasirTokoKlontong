@@ -28,7 +28,7 @@ export default function KasirLayout({ children }) {
                             className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/25 transition-all duration-300 hover:scale-105 hover:shadow-indigo-500/40"
                         >
                             <LogIn className="h-4 w-4" />
-                            <span>Masuk Sistem</span>
+                            <span>Masuk</span>
                         </Link>
                     </div>
                 </header>
