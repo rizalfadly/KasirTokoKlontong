@@ -42,7 +42,7 @@ export default function BukuStok({ movements, filters }) {
                             <span>Audit Mutasi Gudang</span>
                         </div>
                         <h1 className="mt-2 text-2xl font-black tracking-tight md:text-3xl flex items-center gap-2">
-                            Buku Stok & Mutasi Barang 📦
+                            Buku Stok & Mutasi Barang 
                         </h1>
                         <p className="mt-1 text-xs md:text-sm text-indigo-100/90 font-medium">
                             Catatan seluruh perubahan inventaris toko. Menampilkan periode: <b className="text-white underline">{filters.period.label}</b>

@@ -5,7 +5,8 @@ import { num } from '../lib/format';
 import { 
     Wallet, Receipt, FileCheckCorner, Package, 
     Hand, CheckCircle2, Trophy, TrendingUp, 
-    ArrowUpRight, Sparkles, Activity, ShieldAlert
+    ArrowUpRight, Sparkles, Activity, ShieldAlert,
+    ShoppingCart
 } from "lucide-react";
 
 const rp = (n) =>
@@ -84,11 +85,14 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
         <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-8">
             <Head title="Dashboard Power POS" />
 
-            {/* Banner Full Color Supreme dengan Sapaan Dinamis Nama User */}
+            {/* Banner Full Color Supreme dengan Animasi Troli Belanja di Pojok Kanan */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 p-6 text-white shadow-xl shadow-indigo-500/25 md:p-8">
-                <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-20 pointer-events-none">
-                    <Sparkles className="h-64 w-64 animate-spin-slow" strokeWidth={1} />
+                
+                {/* Animasi Troli Belanja di Pojok Kanan */}
+                <div className="absolute -right-6 -bottom-8 z-0 opacity-25 pointer-events-none transform -rotate-12">
+                    <ShoppingCart className="h-64 w-64 animate-bounce duration-1000 text-white" />
                 </div>
+
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold backdrop-blur-md border border-white/20">
@@ -103,7 +107,7 @@ export default function Dashboard({ stats, chart, topProducts, lowStock, recent,
                             <Hand className="h-7 w-7 text-amber-300 animate-bounce" />
                         </h1>
                     </div>
-                    <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/15 text-right">
+                    <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-md border border-white/15 text-right z-10">
                         <div className="text-xs text-indigo-200">Total Kas Hari Ini</div>
                         <div className="text-xl md:text-2xl font-black text-amber-300">{rp(stats.todaySales)}</div>
                     </div>

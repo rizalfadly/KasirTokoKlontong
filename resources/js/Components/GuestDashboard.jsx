@@ -1,6 +1,6 @@
 import { usePage, Head } from '@inertiajs/react';
 import { useState } from 'react';
-import { Egg, Package, CheckCircle2, AlertTriangle, Ban, Search, MapPin, MessageCircle, X, Sparkles } from 'lucide-react';
+import { ShoppingCart, Package, CheckCircle2, AlertTriangle, Ban, Search, MapPin, MessageCircle, X, Sparkles } from 'lucide-react';
 import { num } from '../lib/format';
 import ProductThumb from './ProductThumb';
 
@@ -81,11 +81,14 @@ export default function GuestDashboard({ stockList }) {
         <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
             <Head title="Ketersediaan Stok Toko" />
 
-            {/* Banner Full Color Supreme */}
+            {/* Banner Full Color Supreme dengan Animasi Troli */}
             <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-blue-600 p-6 text-white shadow-xl shadow-indigo-500/25 md:p-8">
-                <div className="pointer-events-none absolute -right-6 -top-8 select-none opacity-20">
-                    <Egg className="h-48 w-48 animate-pulse" strokeWidth={1.5} />
+                
+                {/* Ikon Troli Belanja menggantikan siluet telur */}
+                <div className="absolute right-4 -bottom-6 z-0 opacity-25 pointer-events-none transform -rotate-12">
+                    <ShoppingCart className="h-56 w-56 animate-bounce duration-1000 text-white" />
                 </div>
+
                 <div className="relative z-10">
                     <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold backdrop-blur-md border border-white/20 text-indigo-100">
                         <Sparkles className="h-3.5 w-3.5 text-amber-300 animate-spin-slow" />

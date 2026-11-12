@@ -20,9 +20,29 @@ function Avatar({ name = '?' }) {
     );
 }
 
-export default function UserProfile({ user, onNavigate }) {
+export default function UserProfile({ user, onNavigate, minimized = false }) {
     const name = user.username ?? user.name ?? '?';
 
+    // Jika sidebar sedang dimimize (dikecilkan)
+    if (minimized) {
+        return (
+            <div className="flex flex-col items-center gap-3">
+                <Avatar name={name} />
+                <Link
+                    href="/logout"
+                    method="post"
+                    as="button"
+                    onClick={onNavigate}
+                    title="Keluar Aplikasi"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 text-rose-600 transition-all duration-300 hover:bg-rose-500 hover:text-white"
+                >
+                    <LogOut className="h-4 w-4" />
+                </Link>
+            </div>
+        );
+    }
+
+    // Tampilan normal saat sidebar ukuran penuh
     return (
         <div className="flex items-center gap-3">
             <Avatar name={name} />

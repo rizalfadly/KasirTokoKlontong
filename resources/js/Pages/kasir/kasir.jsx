@@ -106,10 +106,10 @@ export default function Kasir({ products, decimalUnits = ['kilo', 'liter'] }) {
                     <div>
                         <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold backdrop-blur-md border border-white/20 text-indigo-100">
                             <Store className="h-3.5 w-3.5 text-amber-300 animate-bounce" />
-                            <span>Mode Terminal Kasir Aktif</span>
+                            <span>Kasir Aktif</span>
                         </div>
                         <h1 className="mt-2 text-2xl font-black tracking-tight md:text-3xl flex items-center gap-2">
-                            Kasir & Penjualan Cepat 🛒
+                            Dashboard Kasir
                         </h1>
                         <p className="mt-1 text-xs md:text-sm text-indigo-100/90 font-medium">
                             Scan barcode produk atau pilih langsung dari daftar untuk memproses transaksi.

@@ -31,7 +31,7 @@ export default function Setoran({ closings, pending }) {
                             <span>Pusat Keuangan & Kasir</span>
                         </div>
                         <h1 className="mt-2 text-2xl font-black tracking-tight md:text-3xl flex items-center gap-2">
-                            Setoran Shift & Grosir 💰
+                            Setoran Shift
                         </h1>
                         <p className="mt-1 text-xs md:text-sm text-indigo-100/90 font-medium">
                             Rekapitulasi penjualan shift dan grosir yang dikirimkan untuk diverifikasi oleh owner.

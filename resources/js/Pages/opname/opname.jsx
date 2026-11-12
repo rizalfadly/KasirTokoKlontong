@@ -52,7 +52,7 @@ export default function Opname({ opnames, pending, filters }) {
                             <span>Audit & Inventaris Toko</span>
                         </div>
                         <h1 className="mt-2 text-2xl font-black tracking-tight md:text-3xl flex items-center gap-2">
-                            Stok Opname Gudang 📋
+                            Stok Opname Gudang
                         </h1>
                         <p className="mt-1 text-xs md:text-sm text-indigo-100/90 font-medium">
                             Hitung stok fisik, cocokkan dengan sistem, lalu ajukan persetujuan owner.
