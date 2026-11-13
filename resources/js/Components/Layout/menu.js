@@ -50,6 +50,7 @@ export const menu = [
             { label: 'Pengguna', href: '/pengguna', icon: Users },
             { label: 'Toko', href: '/pengaturan', icon: Store },
             { label: 'Supplier', href: '/supplier', icon: Truck },
+            { label: 'Log Aktivitas', href: '/log', icon: History },
         ],
     },
 ];

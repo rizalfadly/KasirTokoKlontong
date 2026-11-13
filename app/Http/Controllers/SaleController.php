@@ -15,6 +15,7 @@ use App\Services\Notifier;
 use Carbon\Carbon;
 use App\Support\Period;
 use App\Models\Customer;
+use App\Services\Audit;
 
 class SaleController extends Controller
 {
@@ -91,7 +92,7 @@ class SaleController extends Controller
                 ->map(fn ($g, $id) => ['product_id' => (int) $id, 'qty' => round((float) $g->sum('qty'), 3)])
                 ->values();
 
-            DB::transaction(function () use ($items, $data, $request, $grosir, $channel) {
+            $sale = DB::transaction(function () use ($items, $data, $request, $grosir, $channel) {
                 $products = Product::whereIn('id', $items->pluck('product_id'))->lockForUpdate()->get()->keyBy('id');
 
                 $total = 0;
@@ -176,7 +177,15 @@ class SaleController extends Controller
                 }
             });
 
-            return back();
+            if ($grosir) {
+                Audit::log(
+                    'sale.grosir',
+                    "Grosir {$sale->invoice} Rp " . number_format($sale->total, 0, ',', '.') . " ke pelanggan #{$sale->customer_id}",
+                    $sale,
+                );
+            }
+
+            return $sale;
         }
 
         public function createGrosir(Request $request)
@@ -390,6 +399,12 @@ class SaleController extends Controller
                 'void_reason' => $data['reason'],
             ]);
         });
+
+        Audit::log(
+            'sale.void',
+            "{$sale->invoice} (Rp " . number_format($sale->total, 0, ',', '.') . ") dibatalkan. Alasan: {$data['reason']}",
+            $sale,
+        );
 
         Notifier::toRoles(
             ['owner'],

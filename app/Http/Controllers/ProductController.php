@@ -12,6 +12,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Services\Audit;
 
 class ProductController extends Controller
 {
@@ -71,6 +72,15 @@ class ProductController extends Controller
             $fields['cost_price'] = $data['cost_price'] ?? null;
         }
 
+        // sebelum $product->update($fields):
+        $old = $product->makeVisible('cost_price')->only(array_keys($fields));
+        $product->update($fields);
+
+        $changes = Audit::diff($old, $fields, ['name', 'price', 'cost_price', 'wholesale_price', 'wholesale_min_qty', 'limit_qty', 'limit_orders']);
+        if ($changes) {
+            Audit::log('product.update', "Produk {$product->name} diubah: " . implode(', ', array_keys($changes)), $product, $changes);
+        }
+
         $product->update($fields);
         $this->saveImage($product, $data);
 
@@ -79,6 +89,8 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
+        Audit::log('product.delete', "Produk {$product->name} dihapus", $product);
+        
         if ($product->saleItems()->exists() || $product->opnameItems()->exists()) {
             // Sudah pernah terjual: diarsipkan, riwayat tetap utuh
             $product->delete();

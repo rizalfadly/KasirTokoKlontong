@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OpnameController;
@@ -13,7 +15,6 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckRole;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CustomerController;
 
 Route::redirect('/', '/dashboard');
 
@@ -98,6 +99,8 @@ Route::middleware(['auth', CheckRole::class . ':owner'])->group(function () {
     Route::post('/supplier/{supplier}/harga', [SupplierController::class, 'savePrice'])->whereNumber('supplier');
     Route::delete('/supplier/{supplier}/harga/{productId}', [SupplierController::class, 'removePrice'])
         ->whereNumber(['supplier', 'productId']);
+
+    Route::get('/log', [ActivityLogController::class, 'index']);
 });
 
 require __DIR__ . '/auth.php';

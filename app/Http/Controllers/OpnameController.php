@@ -12,37 +12,10 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use App\Services\Notifier;
 use App\Support\Period;
+use App\Services\Audit;
 
 class OpnameController extends Controller
 {
-    // Daftar semua sesi opname
-    // public function index()
-    // {
-    //     $net = StockOpnameItem::selectRaw('stock_opname_id, SUM(difference * price) as net')
-    //         ->groupBy('stock_opname_id')
-    //         ->pluck('net', 'stock_opname_id');
-
-    //     $opnames = StockOpname::with('creator:id,username')
-    //         ->withCount('items')
-    //         ->latest('id')
-    //         ->limit(100)
-    //         ->get()
-    //         ->map(fn ($o) => [
-    //             'id'          => $o->id,
-    //             'code'        => $o->code,
-    //             'status'      => $o->status,
-    //             'sku_prefix'  => $o->sku_prefix,
-    //             'note'        => $o->note,
-    //             'creator'     => $o->creator?->username,
-    //             'items_count' => $o->items_count,
-    //             'net'         => (int) round($net[$o->id] ?? 0),
-    //             'created_at'  => $o->created_at,
-    //         ]);
-
-    //     return Inertia::render('opname/opname', ['opnames' => $opnames]);
-    // }
-
-
     public function index(Request $request)
     {
         $period = Period::fromRequest($request);
@@ -246,35 +219,37 @@ class OpnameController extends Controller
 
     // Admin mengirim hasil hitung ke owner
     public function submit(Request $request, StockOpname $opname)
-        {
-            abort_unless(
-                $request->user()->role === 'owner' || $opname->created_by === $request->user()->id,
-                403
-            );
+    {
+        abort_unless(
+            $request->user()->role === 'owner' || $opname->created_by === $request->user()->id,
+            403
+        );
 
-            if ($opname->status !== 'draft') {
-                throw ValidationException::withMessages(['status' => 'Opname ini sudah dikirim.']);
-            }
-
-            $count = $opname->items()->count();
-
-            if ($count === 0) {
-                throw ValidationException::withMessages(['status' => 'Belum ada produk yang dihitung.']);
-            }
-
-            $opname->update(['status' => 'submitted', 'submitted_at' => now(), 'review_note' => null]);
-
-            Notifier::toRoles(
-                ['owner'],
-                'opname',
-                'Opname menunggu persetujuan',
-                "{$opname->code} dikirim oleh {$request->user()->username} ({$count} produk dihitung).",
-                "/opname/{$opname->id}",
-                $request->user()->id,
-            );
-
-            return back();
+        if ($opname->status !== 'draft') {
+            throw ValidationException::withMessages(['status' => 'Opname ini sudah dikirim.']);
         }
+
+        $count = $opname->items()->count();   // <-- $count dibuat di sini
+
+        if ($count === 0) {
+            throw ValidationException::withMessages(['status' => 'Belum ada produk yang dihitung.']);
+        }
+
+        $opname->update(['status' => 'submitted', 'submitted_at' => now(), 'review_note' => null]);
+
+        Audit::log('opname.submit', "Opname {$opname->code} dikirim ke owner ({$count} produk)", $opname);
+
+        Notifier::toRoles(
+            ['owner'],
+            'opname',
+            'Opname menunggu persetujuan',
+            "{$opname->code} dikirim oleh {$request->user()->username} ({$count} produk dihitung).",
+            "/opname/{$opname->id}",
+            $request->user()->id,
+        );
+
+        return back();
+    }
 
     // Owner menyetujui: selisih masuk ke buku stok
     public function approve(Request $request, StockOpname $opname)
@@ -325,6 +300,16 @@ class OpnameController extends Controller
                 'review_note' => $data['review_note'] ?? null,
             ]);
         });
+
+        $selisih = $opname->items()->get()->filter(fn ($i) => $i->difference != 0.0);
+
+        Audit::log(
+            'opname.approve',
+            "Opname {$opname->code} disetujui. {$selisih->count()} produk disesuaikan, nilai selisih Rp "
+                . number_format((int) round($selisih->sum(fn ($i) => $i->difference * $i->price)), 0, ',', '.'),
+            $opname,
+        );
+
         Notifier::toUser(
             $opname->created_by,
             'opname',
@@ -351,6 +336,11 @@ class OpnameController extends Controller
             }
 
             $opname->update(['status' => 'draft', 'submitted_at' => null, 'review_note' => $data['review_note']]);
+            Audit::log(
+                'opname.reject',
+                "Opname {$opname->code} dikembalikan. Catatan: {$data['review_note']}",
+                $opname,
+            );
 
             Notifier::toUser(
                 $opname->created_by,
@@ -369,6 +359,7 @@ class OpnameController extends Controller
     {
         abort_unless($opname->status === 'draft', 403);
         abort_unless($request->user()->role === 'owner' || $opname->created_by === $request->user()->id, 403);
+        Audit::log('opname.delete', "Opname {$opname->code} dihapus", $opname);
 
         $opname->delete();
 

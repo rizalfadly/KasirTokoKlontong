@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use App\Services\Audit;
 
 class UserController extends Controller
 {
@@ -43,7 +44,7 @@ class UserController extends Controller
             'password' => ['required', 'string', 'min:8'],
         ]);
 
-        User::create([
+        $new = User::create([
             'name'      => $data['name'],
             'username'  => $data['username'],
             'role'      => $data['role'],
@@ -52,6 +53,8 @@ class UserController extends Controller
             'email'     => Str::lower($data['username']) . '@kasir.local',
             'password'  => Hash::make($data['password']),
         ]);
+
+        Audit::log('user.create', "Akun {$new->username} dibuat dengan peran {$new->role}", $new);
 
         return back();
     }
@@ -72,17 +75,47 @@ class UserController extends Controller
             ]);
         }
 
+        // Nilai lama, diambil SEBELUM fill()
+        $old = [
+            'name'      => $user->name,
+            'role'      => $user->role,
+            'is_active' => (int) $user->is_active,
+        ];
+
         $user->fill([
             'name'      => $data['name'],
             'role'      => $data['role'],
             'is_active' => $data['is_active'],
         ]);
 
-        if (! empty($data['password'])) {
+        $passwordReset = ! empty($data['password']);
+        if ($passwordReset) {
             $user->password = Hash::make($data['password']);
         }
 
         $user->save();
+
+        $new = [
+            'name'      => $user->name,
+            'role'      => $user->role,
+            'is_active' => (int) $user->is_active,
+        ];
+
+        $changes = Audit::diff($old, $new, ['name', 'role', 'is_active']);
+
+        // Isi sandi tidak pernah dicatat, hanya penanda bahwa sandi direset
+        if ($passwordReset) {
+            $changes['password'] = ['from' => null, 'to' => 'direset'];
+        }
+
+        if ($changes) {
+            Audit::log(
+                'user.update',
+                "Akun {$user->username} diubah: " . implode(', ', array_keys($changes)),
+                $user,
+                $changes,
+            );
+        }
 
         return back();
     }
