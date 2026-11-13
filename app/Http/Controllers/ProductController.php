@@ -41,21 +41,23 @@ class ProductController extends Controller
     {
         $data = $this->validated($request);
 
-        // SKU dikosongkan -> dibuat otomatis
-        //$data['sku'] = $data['sku'] ?? Product::generateSku();
-
         $only = ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon',
-         'wholesale_price', 'wholesale_min_qty', 'limit_qty', 'limit_period','limit_orders'];
+        'wholesale_price', 'wholesale_min_qty', 'limit_qty', 'limit_period', 'limit_orders'];
 
         // Harga beli hanya boleh diisi owner
         if ($request->user()->role === 'owner') {
             $only[] = 'cost_price';
         }
 
-        //$product = Product::create(Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']));
         $product = Product::create(Arr::only($data, $only));
         StockService::initial($product, $request->user()->id);
         $this->saveImage($product, $data);
+
+        Audit::log(
+            'product.create',
+            "Produk {$product->name} ditambahkan (Rp " . number_format($product->price, 0, ',', '.') . ", stok awal {$product->stock} {$product->unit})",
+            $product,
+        );
 
         return back();
     }
@@ -64,7 +66,6 @@ class ProductController extends Controller
     {
         $data = $this->validated($request, $product);
 
-        //$fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'stock', 'unit', 'icon']);
         $fields = Arr::only($data, ['name', 'sku', 'barcode', 'price', 'unit', 'icon',
                             'wholesale_price', 'wholesale_min_qty', 'limit_qty', 'limit_period', 'limit_orders']);
 
@@ -72,7 +73,6 @@ class ProductController extends Controller
             $fields['cost_price'] = $data['cost_price'] ?? null;
         }
 
-        // sebelum $product->update($fields):
         $old = $product->makeVisible('cost_price')->only(array_keys($fields));
         $product->update($fields);
 
@@ -81,7 +81,6 @@ class ProductController extends Controller
             Audit::log('product.update', "Produk {$product->name} diubah: " . implode(', ', array_keys($changes)), $product, $changes);
         }
 
-        $product->update($fields);
         $this->saveImage($product, $data);
 
         return back();
@@ -89,15 +88,19 @@ class ProductController extends Controller
 
     public function destroy(Product $product)
     {
-        Audit::log('product.delete', "Produk {$product->name} dihapus", $product);
-        
+        $name = $product->name;
+
         if ($product->saleItems()->exists() || $product->opnameItems()->exists()) {
             // Sudah pernah terjual: diarsipkan, riwayat tetap utuh
             $product->delete();
+            $mode = 'diarsipkan (punya riwayat)';
         } else {
             // Belum pernah terjual: hapus permanen
             $product->forceDelete();
+            $mode = 'dihapus permanen';
         }
+
+        Audit::log('product.delete', "Produk {$name} {$mode}", $product);
 
         return back();
     }

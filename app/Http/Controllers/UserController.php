@@ -137,10 +137,16 @@ class UserController extends Controller
             ]);
         }
 
+        // Simpan data sebelum dihapus
+        $username = $user->username;
+        $role     = $user->role;
+
         DB::transaction(function () use ($user) {
             $user->notifications()->delete();
             $user->delete();
         });
+
+        Audit::log('user.delete', "Akun {$username} (peran {$role}) dihapus", $user);
 
         return back();
     }

@@ -27,9 +27,19 @@ class SaleController extends Controller
         ]);
     }
 
-    public function store(Request $request)       { return $this->process($request, false); }
-    public function storeGrosir(Request $request) { return $this->process($request, true); }
+    public function store(Request $request)
+    {
+        $this->process($request, false);
 
+        return back();
+    }
+
+    public function storeGrosir(Request $request)
+    {
+        $this->process($request, true);
+
+        return back();
+    }
         private function bought(int $customerId, Product $p): float
         {
             $since = $p->limit_period === 'mingguan' ? now()->startOfWeek() : now()->startOfDay();
@@ -175,6 +185,7 @@ class SaleController extends Controller
                 foreach ($rows as $row) {
                     StockService::move($products[$row['product_id']], -$row['qty'], 'sale', $request->user()->id, null, $sale->id);
                 }
+                return $sale;
             });
 
             if ($grosir) {

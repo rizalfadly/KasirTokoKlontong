@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use App\Services\Audit;
 
 class ShiftClosingController extends Controller
 {
@@ -63,6 +64,11 @@ class ShiftClosingController extends Controller
             'voided_count' => (int) $voided->c,
             'voided_total' => (int) $voided->t,
         ];
+    }
+
+    private function rp(int $n): string
+    {
+        return ($n < 0 ? '-' : '') . 'Rp ' . number_format(abs($n), 0, ',', '.');
     }
 
     public function store(Request $request)
@@ -131,6 +137,13 @@ class ShiftClosingController extends Controller
 
         $label = $data['kind'] === 'grosir' ? 'grosir' : 'shift';
 
+        Audit::log(
+            'shift.submit',
+            "Setoran {$label} #{$closing->id} dikirim oleh {$user->username} ({$s['count']} transaksi, total "
+                . $this->rp($s['total']) . ', selisih kas ' . $this->rp($closing->difference) . ')',
+            $closing,
+        );
+
         Notifier::toRoles(
             ['owner'],
             'shift',
@@ -186,6 +199,16 @@ class ShiftClosingController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        $aksi = $status === 'approved' ? 'disetujui' : 'dikembalikan';
+
+        Audit::log(
+            $status === 'approved' ? 'shift.approve' : 'shift.reject',
+            "Setoran #{$closing->id} milik {$closing->user?->username} {$aksi} (selisih kas "
+                . $this->rp((int) $closing->difference) . ')'
+                . ($note ? ". Catatan: {$note}" : ''),
+            $closing,
+        );
+
         Notifier::toUser(
             $closing->user_id,
             'shift',
@@ -215,6 +238,7 @@ class ShiftClosingController extends Controller
 
         $s = $this->summarize($user->id, $closing->kind ?? 'toko', $closing->period_start, $closing->period_end);
         $expected = (int) $data['opening_cash'] + $s['tunai'];
+        $oldDifference = (int) $closing->difference;
 
         $closing->update([
             'opening_cash'  => $data['opening_cash'],
@@ -232,6 +256,14 @@ class ShiftClosingController extends Controller
             'reviewed_by'   => null,
             'reviewed_at'   => null,
         ]);
+
+        Audit::log(
+            'shift.resubmit',
+            "Setoran #{$closing->id} dikoreksi dan dikirim ulang oleh {$user->username} (selisih kas "
+                . $this->rp($oldDifference) . ' menjadi ' . $this->rp((int) $closing->difference) . ')',
+            $closing,
+            ['difference' => ['from' => $oldDifference, 'to' => (int) $closing->difference]],
+        );
 
         Notifier::toRoles(
             ['owner'],

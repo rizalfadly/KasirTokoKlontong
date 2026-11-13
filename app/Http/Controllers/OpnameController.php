@@ -85,6 +85,12 @@ class OpnameController extends Controller
             'created_by' => $request->user()->id,
         ]);
 
+        Audit::log(
+            'opname.create',
+            "Opname {$opname->code} dimulai" . ($prefix ? " (cakupan SKU {$prefix}*)" : ' (semua produk)'),
+            $opname,
+        );
+
         return redirect("/opname/{$opname->id}");
     }
 
@@ -301,15 +307,23 @@ class OpnameController extends Controller
             ]);
         });
 
-        $selisih = $opname->items()->get()->filter(fn ($i) => $i->difference != 0.0);
+        $selisih = $opname->items()->with('product:id,name,unit')->get()
+            ->filter(fn ($i) => $i->difference != 0.0);
+
+        $rincian = [];
+        foreach ($selisih as $i) {
+            $nama = $i->product?->name ?? "Produk #{$i->product_id}";
+            $rincian[$nama] = ['from' => (float) $i->system_qty, 'to' => (float) $i->counted_qty];
+        }
 
         Audit::log(
             'opname.approve',
             "Opname {$opname->code} disetujui. {$selisih->count()} produk disesuaikan, nilai selisih Rp "
                 . number_format((int) round($selisih->sum(fn ($i) => $i->difference * $i->price)), 0, ',', '.'),
             $opname,
+            $rincian,
         );
-
+        
         Notifier::toUser(
             $opname->created_by,
             'opname',
@@ -359,9 +373,12 @@ class OpnameController extends Controller
     {
         abort_unless($opname->status === 'draft', 403);
         abort_unless($request->user()->role === 'owner' || $opname->created_by === $request->user()->id, 403);
-        Audit::log('opname.delete', "Opname {$opname->code} dihapus", $opname);
+
+        $code = $opname->code;
 
         $opname->delete();
+
+        Audit::log('opname.delete', "Opname {$code} dihapus", $opname);
 
         return redirect('/opname');
     }
