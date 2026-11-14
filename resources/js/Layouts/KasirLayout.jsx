@@ -8,6 +8,7 @@ import NotificationBell from '../Components/Layout/NotificationBell';
 import Sidebar from '../Components/Layout/Sidebar';
 import { menuFor } from '../Components/Layout/menu';
 import { DialogProvider } from '../Components/Dialog';
+import { FlashToasts, ToastProvider } from '../Components/Toast';
 
 const shell =
     'relative isolate min-h-screen bg-gradient-to-br from-indigo-50/60 via-slate-50 to-orange-50/60 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white';
@@ -43,14 +44,16 @@ export default function KasirLayout({ children }) {
 
     return (
         <DialogProvider>
-        <div className={shell}>
-            <Background />
-            
-            <Sidebar 
-                user={user} 
-                sections={sections} 
-                isCollapsed={isCollapsed} 
-            />
+            <ToastProvider>
+                <FlashToasts />
+                <div className={shell}>
+                    <Background />
+                    
+                    <Sidebar 
+                        user={user} 
+                        sections={sections} 
+                        isCollapsed={isCollapsed} 
+                    />
 
             <div className={`transition-all duration-300 ${isCollapsed ? 'lg:pl-20' : 'lg:pl-64'} print:pl-0`}>
                 {/* Header Atas */}
@@ -83,6 +86,7 @@ export default function KasirLayout({ children }) {
 
             <MobileNav user={user} sections={sections} />
         </div>
+        </ToastProvider>
     </DialogProvider>
     );
 }

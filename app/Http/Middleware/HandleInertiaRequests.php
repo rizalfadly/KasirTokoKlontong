@@ -8,39 +8,30 @@ use App\Models\StoreSetting;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that is loaded on the first page visit.
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
-    /**
-     * Determine the current asset version.
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @return array<string, mixed>
-     */
     public function share(Request $request): array
-        {
-            return [
-                ...parent::share($request),
-                'auth' => [
-                    'user' => $request->user(),
-                ],
-                'store' => function () {
-                    $s = \App\Models\StoreSetting::current();
+    {
+        return [
+            ...parent::share($request),
+            'auth' => [
+                'user' => $request->user(),
+            ],
+            'store' => function () {
+                $s = StoreSetting::current();
 
-                    return ['name' => $s->name, 'logo_url' => $s->logo_url];
-                },
-            ];
-        }
-    
+                return ['name' => $s->name, 'logo_url' => $s->logo_url];
+            },
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error'   => fn () => $request->session()->get('error'),
+                'info'    => fn () => $request->session()->get('info'),
+            ],
+        ];
+    }
 }

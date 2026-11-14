@@ -6,6 +6,7 @@ import ProductImageField from '../../Components/ProductImageField';
 import { Plus, Search, Package, PackagePlus, Pencil, Trash2, Sparkles, X, CheckCircle2 } from 'lucide-react';
 import MarginHint from '../../Components/MarginHint';
 import { useDialog } from '../../Components/Dialog';
+import { useToast } from '../../Components/Toast';
 
 const rp = (n) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
@@ -61,6 +62,7 @@ export default function ProdukIndex({
     const isOwner = auth?.user?.role === 'owner';
     const [stockFor, setStockFor] = useState(null);
     const dialog = useDialog();
+    const toast = useToast();
 
     const addForm = useForm({
         name: '', sku: '', barcode: '', price: '', stock: '', cost_price: '',
@@ -84,7 +86,11 @@ export default function ProdukIndex({
 
     function submitAdd(e) {
         e.preventDefault();
-        addForm.post('/produk', { preserveScroll: true, onSuccess: () => addForm.reset() });
+        addForm.post('/produk', {
+            preserveScroll: true,
+            onSuccess: () => addForm.reset(),
+            onError: () => toast.error('Periksa kembali isian yang merah.'),
+        });
     }
 
     function openEdit(p) {
@@ -114,6 +120,7 @@ export default function ProdukIndex({
         editForm.put(`/produk/${editing.id}`, {
             preserveScroll: true,
             onSuccess: () => setEditing(null),
+            onError: () => toast.error('Periksa kembali isian yang merah.'),
         });
     }
 

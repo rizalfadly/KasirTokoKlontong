@@ -426,6 +426,6 @@ class SaleController extends Controller
             $request->user()->id,
         );
 
-        return back();
+        return back()->with('success', 'Transaksi dibatalkan.');
     }
 }

@@ -153,7 +153,7 @@ class ShiftClosingController extends Controller
             $user->id,
         );
 
-        return redirect("/setoran/{$closing->id}");
+        return redirect("/setoran/{$closing->id}")->with('success', 'Setoran dikirim ke owner.');
     }
 
     public function show(Request $request, ShiftClosing $closing)
@@ -173,7 +173,7 @@ class ShiftClosingController extends Controller
 
         $this->review($request, $closing, 'approved', $data['review_note'] ?? null, 'Setoran disetujui');
 
-        return redirect('/setoran');
+        return redirect('/setoran')->with('success', 'Setoran disetujui.');
     }
 
     public function reject(Request $request, ShiftClosing $closing)
@@ -183,7 +183,7 @@ class ShiftClosingController extends Controller
 
         $this->review($request, $closing, 'rejected', $data['review_note'], 'Setoran dikembalikan');
 
-        return redirect('/setoran');
+        return redirect('/setoran')->with('success', 'Setoran dikembalikan ke pengirim.');
     }
 
     private function review(Request $request, ShiftClosing $closing, string $status, ?string $note, string $title): void
@@ -274,6 +274,6 @@ class ShiftClosingController extends Controller
             $user->id,
         );
 
-        return redirect("/setoran/{$closing->id}");
+        return redirect("/setoran/{$closing->id}")->with('success', 'Setoran dikirim ke owner.');
     }
 }

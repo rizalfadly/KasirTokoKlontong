@@ -56,7 +56,7 @@ class UserController extends Controller
 
         Audit::log('user.create', "Akun {$new->username} dibuat dengan peran {$new->role}", $new);
 
-        return back();
+        return back()->with('success', 'Akun dibuat.');
     }
 
     public function update(Request $request, User $user)
@@ -117,7 +117,7 @@ class UserController extends Controller
             );
         }
 
-        return back();
+        return back()->with('success', 'Akun diperbarui.');
     }
 
     public function destroy(Request $request, User $user)
@@ -148,6 +148,6 @@ class UserController extends Controller
 
         Audit::log('user.delete', "Akun {$username} (peran {$role}) dihapus", $user);
 
-        return back();
+        return back()->with('success', 'Akun dihapus.');
     }
 }

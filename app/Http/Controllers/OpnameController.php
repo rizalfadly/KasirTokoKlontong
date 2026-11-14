@@ -254,7 +254,7 @@ class OpnameController extends Controller
             $request->user()->id,
         );
 
-        return back();
+        return back()->with('success', 'Hasil hitungan dikirim ke owner.');
     }
 
     // Owner menyetujui: selisih masuk ke buku stok
@@ -333,7 +333,7 @@ class OpnameController extends Controller
             $request->user()->id,
         );
 
-        return back();
+        return back()->with('success', 'Opname disetujui. Stok sudah disesuaikan.');
     }
 
     // Owner mengembalikan ke admin untuk dihitung ulang
@@ -365,7 +365,7 @@ class OpnameController extends Controller
                 $request->user()->id,
             );
 
-            return redirect('/dashboard');
+            return redirect('/dashboard')->with('success', 'Opname dikembalikan ke admin.');
         }
 
     // Hapus opname yang masih dihitung
@@ -380,7 +380,7 @@ class OpnameController extends Controller
 
         Audit::log('opname.delete', "Opname {$code} dihapus", $opname);
 
-        return redirect('/opname');
+        return redirect('/opname')->with('success', 'Opname dihapus.');
     }
 
     // Unduh laporan CSV

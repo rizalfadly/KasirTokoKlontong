@@ -15,6 +15,6 @@ class CustomerController extends Controller
             'address' => ['nullable', 'string', 'max:200'],
         ]));
 
-        return back();
+        return back()->with('success', 'Pelanggan ditambahkan.');
     }
 }

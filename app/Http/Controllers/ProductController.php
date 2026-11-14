@@ -59,7 +59,7 @@ class ProductController extends Controller
             $product,
         );
 
-        return back();
+        return back()->with('success', 'Produk ditambahkan.');
     }
 
     public function update(Request $request, Product $product)
@@ -83,7 +83,7 @@ class ProductController extends Controller
 
         $this->saveImage($product, $data);
 
-        return back();
+        return back()->with('success', 'Produk diperbarui.');
     }
 
     public function destroy(Product $product)
@@ -102,7 +102,7 @@ class ProductController extends Controller
 
         Audit::log('product.delete', "Produk {$name} {$mode}", $product);
 
-        return back();
+        return back()->with('success', 'Produk dihapus.');
     }
 
     // Menampilkan foto produk (dipakai oleh <img src="/produk/1/gambar">)
