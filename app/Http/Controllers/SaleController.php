@@ -283,9 +283,22 @@ class SaleController extends Controller
 
     public function terakhir(Request $request)
     {
-        $id = Sale::where('user_id', $request->user()->id)->latest('id')->value('id');
+        $sale = Sale::where('user_id', $request->user()->id)->latest('id')->first();
 
-        return $id ? redirect("/riwayat/{$id}?print=1") : redirect('/riwayat');
+        // Dipanggil dari tombol cetak di halaman kasir: kirim data saja (JSON kecil)
+        if ($request->wantsJson()) {
+            abort_unless($sale, 404);
+
+            $sale->load(['items.product:id,name,unit', 'user:id,name,username']);
+
+            return response()->json([
+                'sale'  => $sale,
+                'store' => StoreSetting::current(),
+            ]);
+        }
+
+        // Perilaku lama (buka halaman nota + auto print) tetap jalan
+        return $sale ? redirect("/riwayat/{$sale->id}?print=1") : redirect('/riwayat');
     }
 
     // rekap penjualan toko pershift
