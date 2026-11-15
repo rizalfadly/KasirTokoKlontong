@@ -186,6 +186,7 @@ export default function SuccessModal({ done, onClose }) {
         try {
             const data = cache.current ?? (await fetchLastSale());
             printReceipt(data);
+            onClose(); // tutup notif sukses, iframe cetak tetap jalan karena ada di document.body
         } catch {
             alert('Nota gagal dimuat. Coba lagi atau cetak dari halaman Riwayat.');
         }
