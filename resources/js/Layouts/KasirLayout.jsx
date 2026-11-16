@@ -9,6 +9,7 @@ import Sidebar from '../Components/Layout/Sidebar';
 import { menuFor } from '../Components/Layout/menu';
 import { DialogProvider } from '../Components/Dialog';
 import { FlashToasts, ToastProvider } from '../Components/Toast';
+import IdleLogout from '../Components/Layout/IdleLogout';
 
 const shell =
     'relative isolate min-h-screen bg-gradient-to-br from-indigo-50/60 via-slate-50 to-orange-50/60 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white';
@@ -46,7 +47,8 @@ export default function KasirLayout({ children }) {
         <DialogProvider>
             <ToastProvider>
                 <FlashToasts />
-                <div className={shell}>
+                    {['owner', 'admin'].includes(user.role) && <IdleLogout minutes={30} warnSeconds={60} />}
+                    <div className={shell}>
                     <Background />
                     
                     <Sidebar 
