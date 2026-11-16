@@ -86,7 +86,7 @@ function buildReceiptHtml({ sale, store }) {
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; background: #fff; }
     body {
-        width: ${p.width};
+        width: 100%;
         font-family: ui-monospace, 'Courier New', monospace;
         font-size: 10px;
         line-height: 1.25;
